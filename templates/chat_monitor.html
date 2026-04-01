@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitor de Chats | Amura</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: #f5f5f7; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; }
+        .chat-log { background: white; border-radius: 24px; padding: 20px; height: 70vh; overflow-y: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .message { padding: 12px; border-bottom: 1px solid #eaeef2; font-size: 14px; }
+        .message strong { color: #ec4899; }
+        .timestamp { color: #6c757d; font-size: 12px; margin-left: 10px; }
+        .filter { margin-bottom: 20px; display: flex; gap: 12px; align-items: center; }
+        .filter input, .filter select { padding: 8px; border-radius: 20px; border: 1px solid #ddd; }
+        .back { display: inline-block; margin-bottom: 20px; color: #6c757d; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/master" class="back">&larr; Volver al panel</a>
+    <h1>Monitor de Chats en Tiempo Real</h1>
+    <div class="filter">
+        <input type="text" id="search" placeholder="Filtrar por modelo o cliente">
+        <select id="agenciaFilter">
+            <option value="">Todas las agencias</option>
+            <!-- Aquí podrías cargar agencias dinámicamente desde el backend -->
+        </select>
+    </div>
+    <div class="chat-log" id="chatLog"></div>
+</div>
+<script>
+    const socket = io();
+    const chatLog = document.getElementById('chatLog');
+    const searchInput = document.getElementById('search');
+    const agenciaSelect = document.getElementById('agenciaFilter');
+
+    socket.on('connect', () => {
+        socket.emit('join_monitor');
+    });
+
+    socket.on('monitor_mensaje', (data) => {
+        addMessage(data);
+    });
+
+    function addMessage(data) {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.setAttribute('data-agencia', data.agencia_id || '');
+        div.setAttribute('data-modelo', data.perfil_nombre);
+        div.setAttribute('data-cliente', data.cliente_nombre);
+        div.innerHTML = `
+            <strong>${data.perfil_nombre}</strong> → <strong>${data.cliente_nombre}</strong>
+            <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span><br>
+            ${escapeHtml(data.contenido)}
+        `;
+        chatLog.appendChild(div);
+        applyFilters();
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function applyFilters() {
+        const search = searchInput.value.toLowerCase();
+        const agencia = agenciaSelect.value;
+        const messages = document.querySelectorAll('.message');
+        messages.forEach(msg => {
+            let show = true;
+            if (search && !msg.innerText.toLowerCase().includes(search)) show = false;
+            if (agencia && msg.getAttribute('data-agencia') !== agencia) show = false;
+            msg.style.display = show ? 'block' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    agenciaSelect.addEventListener('change', applyFilters);
+</script>
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ perfil.nombre }} | ❤️ Amura Operador</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --rose: #ec4899; --rose-dark: #be185d; 
+            --bg-light: #f5f5f7; --surface: #ffffff;
+            --elevated: #f8f9fa; --text: #1e1e2e;
+            --text-muted: #6c757d; --border: #eaeef2;
+            --success: #10b981; 
+        }
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg-light); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* ========== NAVBAR STYLES ========== */
+        .navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .nav-container { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .logo { font-size: 28px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+        .logo-heart, .logo-text { background: linear-gradient(135deg, #f5a3c7, #ec4899); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-heart { font-size: 32px; line-height: 1; }
+        .central-links { display: flex; align-items: center; gap: 1rem; position: relative; margin-left: auto; }
+        .nav-item { font-size: 0.85rem; font-weight: 500; color: #2c2c2c; text-decoration: none; padding: 0.6rem 1.1rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; border: none; background: transparent; }
+        .nav-item:hover { background-color: #f9f9f9; }
+        .config-dots { font-size: 1.6rem; font-weight: 700; line-height: 1; cursor: pointer; position: relative; }
+        .config-popup { position: absolute; top: calc(100% + 12px); right: 0; width: 260px; background: white; border-radius: 24px; box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.2); z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(-8px); transition: 0.25s; }
+        .config-popup.active { opacity: 1; visibility: visible; transform: translateY(0); }
+        .popup-header { padding: 12px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+        .popup-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--rose); }
+        .popup-menu-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; font-size: 0.8rem; font-weight: 500; color: #2c2c2c; text-decoration: none; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
+        .popup-menu-item:hover { background: #f5f5f5; }
+        .popup-divider { height: 1px; background: var(--border); margin: 6px 0; }
+        .logout-item { color: #ef4444; }
+        
+        /* MODAL DE COLORES */
+        .modal-color { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1100; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-color.active { opacity: 1; visibility: visible; }
+        .modal-color-content { background: white; border-radius: 32px; padding: 2rem; max-width: 320px; width: 90%; text-align: center; }
+        .color-palette { display: flex; gap: 1rem; justify-content: center; margin: 1rem 0; }
+        .color-option { width: 48px; height: 48px; border-radius: 50%; cursor: pointer; transition: transform 0.2s; }
+        .color-option:hover { transform: scale(1.1); }
+        .color-rosa { background: linear-gradient(135deg, #f5a3c7, #ec4899); }
+        .color-azul { background: linear-gradient(135deg, #93c5fd, #3b82f6); }
+        .color-verde { background: linear-gradient(135deg, #a7f3d0, #10b981); }
+        .color-purpura { background: linear-gradient(135deg, #e9d5ff, #a855f7); }
+
+        /* MODAL DE ESTADÍSTICAS */
+        .modal-stats { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1200; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-stats.active { opacity: 1; visibility: visible; }
+        .modal-stats-content { background: white; border-radius: 32px; padding: 2rem; max-width: 500px; width: 90%; text-align: center; }
+        .stats-grid-modal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin: 1.5rem 0; }
+        .stat-card-modal { background: #f8f9fa; padding: 1.2rem; border-radius: 20px; }
+        .stat-value-modal { font-size: 1.8rem; font-weight: 800; color: var(--rose); }
+
+        /* ========== LAYOUT PRINCIPAL ========== */
+        .main-layout { display: flex; flex: 1; padding: 16px; gap: 16px; overflow: hidden; justify-content: center; }
+
+        .col-left { flex: 0 0 320px; display: flex; flex-direction: column; gap: 16px; }
+        .box { background: var(--surface); border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; overflow: hidden;}
+        .mingle-btn { margin: 16px; padding: 14px; border-radius: 40px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; font-weight: 800; text-transform: uppercase; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(245,158,11,0.3); transition: 0.2s;}
+        .mingle-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(245,158,11,0.4); }
+        .chat-list { flex: 1; overflow-y: auto; padding: 8px; }
+        .chat-list::-webkit-scrollbar { width: 0px; }
+        .contact-item { display: flex; align-items: center; padding: 12px; border-radius: 16px; cursor: pointer; transition: 0.2s; gap: 12px; border: 1px solid transparent;}
+        .contact-item:hover, .contact-item.active { background: var(--elevated); border-color: var(--border); }
+        .contact-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+        .contact-info { flex: 1; overflow: hidden; }
+        .contact-name { font-size: 14px; font-weight: 700; }
+        .contact-status { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        .col-chat { flex: 0 0 486px; max-height: 816px; background: var(--surface); border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.08); position: relative; transition: 0.3s;}
+        .col-chat.closed { flex: 0 0 0; opacity: 0; overflow: hidden; border: none; margin: 0;}
+        
+        .chat-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 24px 24px 0 0;}
+        .header-info { display: flex; align-items: center; gap: 12px; }
+        .header-info img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background-image: url('/static/fondo_chats.png'); background-size: cover; background-position: center; display: flex; flex-direction: column; gap: 16px; position: relative;}
+        .chat-messages::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.7); pointer-events: none; z-index: 0; }
+        
+        .message { max-width: 75%; position: relative; display: flex; flex-direction: column; z-index: 1; }
+        .message.sent { align-self: flex-end; align-items: flex-end; }
+        .message.received { align-self: flex-start; align-items: flex-start; }
+        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.05);}
+        .sent .bubble { background: linear-gradient(135deg, var(--rose), var(--rose-dark)); color: white; border-bottom-right-radius: 4px; }
+        .received .bubble { background: white; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+        .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; font-weight: 500;}
+
+        .chat-input-area { padding: 12px 20px; border-top: 1px solid var(--border); background: white; border-radius: 0 0 24px 24px; z-index: 10;}
+        .quick-responses { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--border);}
+        .quick-responses::-webkit-scrollbar { height: 0; }
+        .quick-btn { background: var(--elevated); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer; color: var(--text-muted); transition: 0.2s;}
+        .quick-btn:hover { background: var(--rose); color: white; border-color: var(--rose);}
+        .input-row { display: flex; gap: 10px; align-items: center; }
+        .msg-input { flex: 1; padding: 12px 16px; border-radius: 40px; border: 1px solid var(--border); background: var(--elevated); outline: none; font-size: 14px;}
+        .send-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--rose); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: 0.2s;}
+        .send-btn:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(236,72,153,0.3); }
+
+        .col-profile { flex: 1; max-width: 400px; background: var(--surface); border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 24px; overflow-y: auto;}
+        
+        #gift-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 9999; display: flex; align-items: center; justify-content: center; opacity: 0; }
+        .gift-anim-icon { font-size: 180px; text-shadow: 0 0 60px rgba(236,72,153,1); filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)); }
+        @keyframes popGift {
+            0% { transform: scale(0) rotate(-30deg) translateY(100px); opacity: 0; }
+            40% { transform: scale(1.3) rotate(15deg) translateY(0); opacity: 1; }
+            60% { transform: scale(1.1) rotate(-5deg); opacity: 1; }
+            80% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+            100% { transform: scale(2) translateY(-200px); opacity: 0; }
+        }
+        
+        #dynamicToast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1f2937; color: white; padding: 8px 16px; border-radius: 40px; font-size: 12px; z-index: 1100; opacity: 0; transition: transform 0.3s, opacity 0.3s; pointer-events: none; white-space: nowrap; }
+        #dynamicToast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/operador/{{ perfil.id }}" class="logo">
+                <span class="logo-heart">❤️</span>
+                <span class="logo-text">Amura</span>
+            </a>
+            <div class="central-links">
+                <div class="nav-item config-dots" id="configDotsBtn">⋮</div>
+                <div class="config-popup" id="configPopup">
+                    <div class="popup-header">
+                        <img src="/static/uploads/{{ perfil.foto_principal }}" class="popup-avatar" onerror="this.src='/static/default_user.png'">
+                        <div>
+                            <div style="font-weight: 700;">{{ perfil.nombre }}</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">ID: {{ perfil.id }}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <!-- MI PERFIL - Link agregado -->
+                        <a href="/perfil_modelo" class="popup-menu-item"><i class="fas fa-user"></i> Mi perfil</a>
+                        <div class="popup-divider"></div>
+                        <!-- ESTADÍSTICAS - Ahora incluye los créditos -->
+                        <div class="popup-menu-item" id="showStatsBtn"><i class="fas fa-chart-line"></i> Estadísticas ({{ perfil.creditos_generados }} CR)</div>
+                        <div class="popup-divider"></div>
+                        <div class="popup-menu-item" id="customizeColorsBtn"><i class="fas fa-palette"></i> Personalizar colores</div>
+                        <div class="popup-divider"></div>
+                        <a href="/logout" class="popup-menu-item logout-item"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MODAL DE COLORES -->
+    <div id="colorModal" class="modal-color" onclick="if(event.target===this) this.style.display='none'">
+        <div class="modal-color-content">
+            <h3>🎨 Personalizar colores</h3>
+            <div class="color-palette">
+                <div class="color-option color-rosa" data-theme="rosa" title="Rosa"></div>
+                <div class="color-option color-azul" data-theme="azul" title="Azul"></div>
+                <div class="color-option color-verde" data-theme="verde" title="Verde"></div>
+                <div class="color-option color-purpura" data-theme="purpura" title="Púrpura"></div>
+            </div>
+            <button id="closeColorBtn" style="background: none; border: none; color: var(--text-secondary); cursor: pointer;">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE ESTADÍSTICAS (con créditos incluidos) -->
+    <div id="statsModal" class="modal-stats" onclick="if(event.target===this) this.style.display='none'">
+        <div class="modal-stats-content">
+            <h3>📊 Estadísticas de producción</h3>
+            <div class="stats-grid-modal">
+                <div class="stat-card-modal">
+                    <div class="stat-value-modal">{{ stats.chats_activos|default(0) }}</div>
+                    <div>Chats activos</div>
+                </div>
+                <div class="stat-card-modal">
+                    <div class="stat-value-modal">{{ stats.favoritos|default(0) }}</div>
+                    <div>Favoritos</div>
+                </div>
+                <div class="stat-card-modal">
+                    <div class="stat-value-modal">{{ stats.mensajes_hoy|default(0) }}</div>
+                    <div>Mensajes hoy</div>
+                </div>
+                <div class="stat-card-modal">
+                    <div class="stat-value-modal">{{ perfil.creditos_generados }}</div>
+                    <div>Créditos totales</div>
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">Acumulados</div>
+                </div>
+                <div class="stat-card-modal">
+                    <div class="stat-value-modal">{{ stats.creditos_hoy|default(0) }}</div>
+                    <div>Créditos hoy</div>
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">Generados hoy</div>
+                </div>
+                <div class="stat-card-modal">
+                    <div class="stat-value-modal">{{ stats.creditos_semana|default(0) }}</div>
+                    <div>Esta semana</div>
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">Últimos 7 días</div>
+                </div>
+                <div class="stat-card-modal">
+                    <div class="stat-value-modal">{{ stats.creditos_mes|default(0) }}</div>
+                    <div>Este mes</div>
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">Últimos 30 días</div>
+                </div>
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                <i class="fas fa-info-circle"></i> Cada mensaje enviado genera 1 CR automáticamente
+            </div>
+            <button id="closeStatsBtn" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; margin-top: 1rem;">Cerrar</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="col-left box">
+            <button class="mingle-btn" onclick="lanzarMingle()">
+                <i class="fas fa-bolt"></i> Lanzar Solicitudes
+            </button>
+            <div style="padding: 0 16px 10px; border-bottom: 1px solid var(--border);">
+                <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Chats Activos</div>
+            </div>
+            <div class="chat-list" id="chatList"></div>
+        </div>
+
+        <div class="col-chat" id="colChat">
+            {% if cliente_actual %}
+            <div class="chat-header">
+                <div class="header-info">
+                    <img src="/static/uploads/{{ cliente_actual.foto_perfil }}" onerror="this.src='/static/default_user.png'">
+                    <div>
+                        <div style="font-weight: 700; font-size: 16px;">{{ cliente_actual.nombre_real }}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);"><i class="fas fa-globe"></i> {{ cliente_actual.pais }}</div>
+                    </div>
+                </div>
+                <button style="background:none; border:none; font-size: 20px; color: var(--text-muted); cursor:pointer;" onclick="cerrarChat()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="chat-messages" id="messagesContainer"></div>
+
+            <div class="chat-input-area">
+                <div class="quick-responses">
+                    <button class="quick-btn" onclick="insertar('¡Hola guapo! 😊')">¡Hola!</button>
+                    <button class="quick-btn" onclick="insertar('Me encanta tu perfil ❤️')">Me encanta tu perfil</button>
+                    <button class="quick-btn" onclick="insertar('¿De dónde eres?')">¿De dónde eres?</button>
+                    <button class="quick-btn" onclick="insertar('Cuéntame más de ti ✨')">Cuéntame más</button>
+                </div>
+                <div class="input-row">
+                    <input type="text" id="messageInput" class="msg-input" placeholder="Escribe para enamorar..." autocomplete="off">
+                    <button class="send-btn" onclick="enviarMensaje()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+            {% else %}
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted);">
+                <i class="fas fa-comment-dots" style="font-size: 64px; opacity: 0.3; margin-bottom: 16px;"></i>
+                <h3>Área de Trabajo</h3>
+                <p style="font-size: 14px;">Selecciona un cliente para chatear y generar créditos.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-profile" id="colProfile">
+            {% if cliente_actual %}
+            <div style="text-align: center; margin-bottom: 24px;">
+                <img src="/static/uploads/{{ cliente_actual.foto_perfil }}" onerror="this.src='/static/default_user.png'" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--elevated); box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 16px;">
+                <h2 style="font-size: 22px; font-weight: 800;">{{ cliente_actual.nombre_real }}</h2>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; font-style: italic;">"{{ cliente_actual.estado_hoy }}"</p>
+            </div>
+
+            <div style="background: var(--elevated); padding: 20px; border-radius: 20px; border: 1px solid var(--border);">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">Detalles</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div><span style="font-size: 11px; color:var(--text-muted); display:block;">Edad</span><strong style="font-size: 14px;">{{ cliente_actual.edad }}</strong></div>
+                    <div><span style="font-size: 11px; color:var(--text-muted); display:block;">País</span><strong style="font-size: 14px;">{{ cliente_actual.pais }}</strong></div>
+                    <div><span style="font-size: 11px; color:var(--text-muted); display:block;">Estado Civil</span><strong style="font-size: 14px;">{{ cliente_actual.estado_civil or '-' }}</strong></div>
+                    <div><span style="font-size: 11px; color:var(--text-muted); display:block;">Busca</span><strong style="font-size: 14px;">{{ cliente_actual.intencion or '-' }}</strong></div>
+                </div>
+
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Biografía</div>
+                <p style="font-size: 13px; line-height: 1.5; margin-bottom: 20px;">{{ cliente_actual.biografia }}</p>
+
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Intereses</div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    {% for int in (cliente_actual.intereses or '').split(',') %}
+                    <span style="background: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; border: 1px solid var(--border);">{{ int.strip() }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted); text-align: center;">
+                Elige un chat para ver la información del cliente y utilizarla a tu favor.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="gift-overlay"><div class="gift-anim-icon" id="gift-icon-display"></div></div>
+    <div id="dynamicToast"></div>
+
+    <script>
+        const socket = io();
+        const perfilId = "{{ perfil.id }}";
+        const clienteId = "{{ cliente_actual.id if cliente_actual else 0 }}";
+        const roomName = `modelo_${perfilId}`;
+        const msgContainer = document.getElementById('messagesContainer');
+        const gananciasDisplay = document.getElementById('gananciasDisplay');
+
+        // ========== FUNCIONES DE UI ==========
+        function showToast(message) {
+            const toast = document.getElementById('dynamicToast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        function cerrarChat() {
+            document.getElementById('colChat').classList.add('closed');
+        }
+
+        function lanzarMingle() {
+            socket.emit('lets_mingle', {});
+            showToast("🚀 ¡Solicitudes lanzadas! Tu perfil ha sido notificado a los clientes conectados.");
+        }
+
+        function insertar(texto) { 
+            const input = document.getElementById('messageInput');
+            input.value = texto; 
+            input.focus(); 
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'Ahora';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes} min`;
+            return `${Math.floor(minutes/60)} h`;
+        }
+
+        function agregarMensaje(contenido, tipo, msgId, fecha = new Date()) {
+            if(!msgContainer) return;
+            const div = document.createElement('div');
+            div.className = `message ${tipo}`;
+            div.innerHTML = `
+                <div class="bubble" id="msg-${msgId}">${escapeHtml(contenido)}</div>
+                <div class="msg-time" data-time="${fecha.getTime()}">${timeAgo(fecha)}</div>
+            `;
+            msgContainer.appendChild(div);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+
+        async function enviarMensaje() {
+            const input = document.getElementById('messageInput');
+            const contenido = input.value.trim();
+            if(!contenido || clienteId == 0) return;
+            
+            input.value = '';
+            try {
+                const res = await fetch('/api/enviar_mensaje', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contenido, receptor_id: parseInt(clienteId) })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    actualizarGanancias();
+                } else {
+                    alert('Error: ' + data.msg);
+                }
+            } catch(e) { console.error('Error enviando'); }
+        }
+
+        async function actualizarGanancias() {
+            if (!gananciasDisplay) return;
+            const res = await fetch(`/api/mis_ganancias/${perfilId}`);
+            const data = await res.json();
+            if (gananciasDisplay) gananciasDisplay.textContent = data.ganancias;
+        }
+
+        async function cargarMensajes() {
+            const res = await fetch(`/api/get_mensajes/${clienteId}`);
+            const data = await res.json();
+            data.forEach(m => {
+                const tipo = m.tipo_emisor === 'modelo' ? 'sent' : 'received';
+                agregarMensaje(m.contenido, tipo, m.id, new Date(m.fecha));
+            });
+        }
+
+        async function cargarContactos() {
+            const res = await fetch('/api/mis_conversaciones');
+            const data = await res.json();
+            const list = document.getElementById('chatList');
+            list.innerHTML = '';
+            if (data.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No hay contactos aún</div>';
+                return;
+            }
+            data.forEach(c => {
+                const div = document.createElement('div');
+                div.className = `contact-item ${c.id == clienteId ? 'active' : ''}`;
+                div.onclick = () => window.location.href = `/operador/${perfilId}?cliente=${c.id}`;
+                div.innerHTML = `
+                    <img src="/static/uploads/${c.foto}" onerror="this.src='/static/default_user.png'">
+                    <div class="contact-info">
+                        <div class="contact-name">${escapeHtml(c.nombre)}</div>
+                        <div class="contact-status">${escapeHtml(c.estado || 'Activo recientemente')}</div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // ========== SOCKET ==========
+        if(perfilId) {
+            socket.on('connect', () => socket.emit('join', { room: roomName }));
+            
+            socket.on('nuevo_mensaje', (data) => {
+                const esMio = data.tipo_emisor === 'modelo';
+                agregarMensaje(data.contenido, esMio ? 'sent' : 'received', data.id, new Date(data.timestamp));
+                actualizarGanancias();
+            });
+            
+            socket.on('recibir_regalo', (data) => {
+                const overlay = document.getElementById('gift-overlay');
+                const icon = document.getElementById('gift-icon-display');
+                icon.textContent = data.regalo;
+                overlay.style.animation = 'none';
+                void overlay.offsetWidth;
+                overlay.style.animation = 'popGift 3s ease-out forwards';
+                agregarMensaje(`¡El cliente ha enviado un regalo enorme: ${data.regalo}!`, 'received', Date.now(), new Date());
+                actualizarGanancias();
+            });
+        }
+
+        if(document.getElementById('messageInput')) {
+            document.getElementById('messageInput').addEventListener('keypress', e => {
+                if(e.key === 'Enter') enviarMensaje();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if(clienteId != 0) cargarMensajes();
+            cargarContactos();
+        });
+
+        // ========== PERSONALIZACIÓN DE COLORES ==========
+        function applyTheme(theme) {
+            document.body.className = `theme-${theme}`;
+            localStorage.setItem('theme', theme);
+        }
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) applyTheme(savedTheme);
+        else document.body.className = 'theme-rosa';
+
+        const customizeColorsBtn = document.getElementById('customizeColorsBtn');
+        const colorModal = document.getElementById('colorModal');
+        const closeColorBtn = document.getElementById('closeColorBtn');
+        const colorOptions = document.querySelectorAll('.color-option');
+
+        if (customizeColorsBtn) {
+            customizeColorsBtn.addEventListener('click', () => {
+                colorModal.style.display = 'flex';
+                const configPopup = document.getElementById('configPopup');
+                if (configPopup) configPopup.classList.remove('active');
+            });
+        }
+
+        if (closeColorBtn) {
+            closeColorBtn.addEventListener('click', () => {
+                colorModal.style.display = 'none';
+            });
+        }
+
+        colorOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                const theme = opt.getAttribute('data-theme');
+                applyTheme(theme);
+                colorModal.style.display = 'none';
+            });
+        });
+
+        // ========== CONFIGURACIÓN DEL POPUP ==========
+        const configDotsBtn = document.getElementById('configDotsBtn');
+        const configPopup = document.getElementById('configPopup');
+        if (configDotsBtn && configPopup) {
+            configDotsBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                configPopup.classList.toggle('active');
+            });
+            document.addEventListener('click', function(event) {
+                if (!configDotsBtn.contains(event.target) && !configPopup.contains(event.target)) {
+                    configPopup.classList.remove('active');
+                }
+            });
+        }
+
+        // ========== MODAL DE ESTADÍSTICAS ==========
+        const statsModal = document.getElementById('statsModal');
+        const showStatsBtn = document.getElementById('showStatsBtn');
+        const closeStatsBtn = document.getElementById('closeStatsBtn');
+        
+        function openStatsModal() {
+            statsModal.style.display = 'flex';
+        }
+        
+        function closeStatsModal() {
+            statsModal.style.display = 'none';
+        }
+        
+        if (showStatsBtn) {
+            showStatsBtn.addEventListener('click', openStatsModal);
+        }
+        
+        if (closeStatsBtn) {
+            closeStatsBtn.addEventListener('click', closeStatsModal);
+        }
+        
+        if (statsModal) {
+            statsModal.addEventListener('click', (e) => {
+                if (e.target === statsModal) closeStatsModal();
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>❤️ Amura | Crear Cuenta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --rose: #ec4899;
+            --rose-dark: #be185d;
+            --primary: #6366f1;
+            --bg-light: #f5f5f7;
+            --surface: #ffffff;
+            --elevated: #f8f9fa;
+            --text: #1e1e2e;
+            --text-secondary: #6c757d;
+            --border: #eaeef2;
+            --shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background: var(--bg-light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .card {
+            background: var(--surface);
+            padding: 48px;
+            border-radius: 32px;
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            animation: fadeSlideUp 0.6s ease-out;
+        }
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .logo-heart {
+            background: linear-gradient(135deg, #f5a3c7, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 32px;
+        }
+        .logo-text span {
+            background: linear-gradient(135deg, #f5a3c7, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+        h2 {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 32px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .card { padding: 32px 24px; }
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-input, .form-select {
+            padding: 14px;
+            background: var(--elevated);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            color: var(--text);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--rose);
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+        }
+        .form-select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 20px;
+            padding-right: 48px;
+        }
+        option {
+            background: var(--surface);
+            color: var(--text);
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 24px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(236, 72, 153, 0.3);
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .footer a {
+            color: var(--rose);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .benefits {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+        .benefit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .benefit-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(236, 72, 153, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        .range-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .range-group .form-group {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">
+            <div class="logo-text">
+                <span class="logo-heart">❤️</span>
+                <span>Amura</span>
+            </div>
+        </div>
+        <h2>Únete a la comunidad</h2>
+        <div class="benefits">
+            <div class="benefit"><div class="benefit-icon">💎</div><span>50 CR gratis</span></div>
+            <div class="benefit"><div class="benefit-icon">✓</div><span>Perfiles verificados</span></div>
+            <div class="benefit"><div class="benefit-icon">🔒</div><span>Chat seguro</span></div>
+        </div>
+        <form class="form-grid" onsubmit="event.preventDefault(); finalizarRegistro();">
+            <div class="form-group full-width">
+                <label class="form-label">Correo electrónico</label>
+                <input type="email" class="form-input" id="email" placeholder="tu@email.com" required>
+            </div>
+            <div class="form-group full-width">
+                <label class="form-label">Contraseña</label>
+                <input type="password" class="form-input" id="pass" placeholder="Mínimo 6 caracteres" required minlength="6">
+            </div>
+            <div class="form-group full-width">
+                <label class="form-label">Nombre o apodo</label>
+                <input type="text" class="form-input" id="nombre" placeholder="¿Cómo te llamamos?" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Edad</label>
+                <select class="form-select" id="edad">
+                    {% for n in range(18, 71) %}
+                    <option value="{{ n }}" {% if n == 25 %}selected{% endif %}>{{ n }} años</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">País</label>
+                <select class="form-select" id="pais">
+                    <option value="Argentina">Argentina 🇦🇷</option>
+                    <option value="Chile">Chile 🇨🇱</option>
+                    <option value="Colombia" selected>Colombia 🇨🇴</option>
+                    <option value="España">España 🇪🇸</option>
+                    <option value="México">México 🇲🇽</option>
+                    <option value="Perú">Perú 🇵🇪</option>
+                    <option value="USA">USA 🇺🇸</option>
+                    <option value="Venezuela">Venezuela 🇻🇪</option>
+                    <option value="Brasil">Brasil 🇧🇷</option>
+                    <option value="Canadá">Canadá 🇨🇦</option>
+                    <option value="Reino Unido">Reino Unido 🇬🇧</option>
+                    <option value="Alemania">Alemania 🇩🇪</option>
+                    <option value="Francia">Francia 🇫🇷</option>
+                    <option value="Italia">Italia 🇮🇹</option>
+                    <option value="Australia">Australia 🇦🇺</option>
+                    <option value="Otro">Otro 🌍</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Estado / Provincia</label>
+                <input type="text" class="form-input" id="estado" placeholder="Ej. Buenos Aires">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Género</label>
+                <select class="form-select" id="genero">
+                    <option value="Hombre">Hombre</option>
+                    <option value="Mujer" selected>Mujer</option>
+                    <option value="No binario">No binario</option>
+                    <option value="Prefiero no decirlo">Prefiero no decirlo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Orientación sexual</label>
+                <select class="form-select" id="orientacion">
+                    <option value="Heterosexual">Heterosexual</option>
+                    <option value="Homosexual">Homosexual</option>
+                    <option value="Bisexual">Bisexual</option>
+                    <option value="Pansexual">Pansexual</option>
+                    <option value="Asexual">Asexual</option>
+                    <option value="Prefiero no decirlo">Prefiero no decirlo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Busco</label>
+                <select class="form-select" id="busco">
+                    <option value="Mujeres">Mujeres</option>
+                    <option value="Hombres">Hombres</option>
+                    <option value="Ambos">Ambos</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Intención</label>
+                <select class="form-select" id="intencion">
+                    <option value="Relación seria">Relación seria</option>
+                    <option value="Algo casual">Algo casual</option>
+                    <option value="Nuevos amigos">Nuevos amigos</option>
+                    <option value="No lo sé aún" selected>No lo sé aún</option>
+                </select>
+            </div>
+            <div class="form-group full-width">
+                <label class="form-label">Rango de edad que buscas</label>
+                <div class="range-group">
+                    <div class="form-group"><input type="number" class="form-input" id="edad_min" value="18" min="18" max="95" placeholder="Mín"></div>
+                    <div class="form-group"><input type="number" class="form-input" id="edad_max" value="95" min="18" max="95" placeholder="Máx"></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Estado civil</label>
+                <select class="form-select" id="estado_civil">
+                    <option value="">Seleccionar...</option>
+                    <option value="Soltero/a">Soltero/a</option>
+                    <option value="En relación">En relación</option>
+                    <option value="Casado/a">Casado/a</option>
+                    <option value="Divorciado/a">Divorciado/a</option>
+                    <option value="Viudo/a">Viudo/a</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Trabajo</label>
+                <input type="text" class="form-input" id="trabajo" placeholder="Ej. Ingeniero">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Educación</label>
+                <input type="text" class="form-input" id="educacion" placeholder="Ej. Universidad de los Andes">
+            </div>
+            <div class="form-group full-width">
+                <label class="form-label">Hábitos</label>
+                <select class="form-select" id="habitos" multiple size="4">
+                    <option value="Fuma">🚬 Fuma</option>
+                    <option value="Bebe">🍷 Bebe</option>
+                    <option value="Hace ejercicio">💪 Hace ejercicio</option>
+                    <option value="Vegetariano">🥦 Vegetariano</option>
+                    <option value="Vegano">🌱 Vegano</option>
+                    <option value="Sin gluten">🚫🌾 Sin gluten</option>
+                </select>
+                <small style="color: var(--text-secondary);">Mantén presionado Ctrl (Cmd) para seleccionar varios.</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Estatura</label>
+                <select class="form-select" id="estatura">
+                    <option value="">Seleccionar...</option>
+                    {% for cm in range(140, 211) %}
+                    <option value="{{ cm }} cm">{{ cm }} cm</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Color de piel</label>
+                <select class="form-select" id="color_piel">
+                    <option value="">Seleccionar...</option>
+                    <option value="Blanca">Blanca</option>
+                    <option value="Morena">Morena</option>
+                    <option value="Negra">Negra</option>
+                    <option value="Mestiza">Mestiza</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+            <div class="form-group full-width">
+                <label class="form-label">Intereses (selecciona al menos 5)</label>
+                <div class="intereses-checkboxes" id="intereses-list" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
+                    <!-- Se cargarán dinámicamente con JS -->
+                </div>
+                <input type="hidden" id="intereses" name="intereses">
+                <small id="intereses-count" style="color: var(--rose); display: block; margin-top: 5px;">0/5 seleccionados</small>
+            </div>
+            <button type="submit" class="btn-primary full-width">Crear mi cuenta ❤️</button>
+        </form>
+        <div class="footer">
+            Al registrarte, aceptas los <a href="#">Términos y condiciones</a>, la <a href="#">Política de privacidad</a>, la <a href="#">Política de reembolso y cancelación</a> y la <a href="#">Política de contenido</a>. Puede cancelar su cuenta o darse de baja de cualquier servicio (incluido los vinculados) en cualquier momento.
+        </div>
+        <div class="footer" style="margin-top: 16px;">
+            ¿Ya tienes cuenta? <a href="/">Inicia sesión aquí</a>
+        </div>
+    </div>
+
+    <script>
+        // Lista de intereses con emojis
+        const interesesLista = [
+            "🍕 Pizza", "🎮 Gaming", "✈️ Viajar", "📚 Leer", "🎬 Cine", "🎵 Música",
+            "🏋️ Gimnasio", "🏃 Correr", "🏊 Natación", "⚽ Fútbol", "🏀 Baloncesto",
+            "🎨 Arte", "📸 Fotografía", "🍳 Cocinar", "🍷 Vino", "☕ Café", "🐶 Perros",
+            "🐱 Gatos", "🌱 Naturaleza", "🧘 Yoga", "💃 Baile", "🎭 Teatro",
+            "🛍️ Compras", "🏖️ Playa", "🏔️ Montaña", "🚴 Ciclismo"
+        ];
+
+        const interesesContainer = document.getElementById('intereses-list');
+        const interesesHidden = document.getElementById('intereses');
+        const interesesCountSpan = document.getElementById('intereses-count');
+        let selectedIntereses = [];
+
+        function renderIntereses() {
+            interesesContainer.innerHTML = '';
+            interesesLista.forEach(interes => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = interes;
+                checkbox.id = `interes_${interes}`;
+                checkbox.addEventListener('change', () => updateSelectedIntereses());
+                const label = document.createElement('label');
+                label.htmlFor = `interes_${interes}`;
+                label.textContent = interes;
+                label.style.cssText = 'display: inline-flex; align-items: center; gap: 5px; background: var(--elevated); padding: 8px 14px; border-radius: 30px; cursor: pointer; transition: 0.2s; border: 1px solid var(--border);';
+                label.prepend(checkbox);
+                interesesContainer.appendChild(label);
+            });
+        }
+
+        function updateSelectedIntereses() {
+            selectedIntereses = Array.from(document.querySelectorAll('#intereses-list input:checked')).map(cb => cb.value);
+            interesesHidden.value = selectedIntereses.join(',');
+            interesesCountSpan.textContent = `${selectedIntereses.length}/5 seleccionados`;
+            if (selectedIntereses.length >= 5) {
+                interesesCountSpan.style.color = '#10b981';
+            } else {
+                interesesCountSpan.style.color = 'var(--rose)';
+            }
+        }
+
+        renderIntereses();
+
+        async function finalizarRegistro() {
+            const data = {
+                email: document.getElementById('email').value.trim(),
+                password: document.getElementById('pass').value,
+                nombre: document.getElementById('nombre').value.trim(),
+                edad: document.getElementById('edad').value,
+                pais: document.getElementById('pais').value,
+                estado: document.getElementById('estado').value,
+                genero: document.getElementById('genero').value,
+                orientacion_sexual: document.getElementById('orientacion').value,
+                busco: document.getElementById('busco').value,
+                edad_min: document.getElementById('edad_min').value,
+                edad_max: document.getElementById('edad_max').value,
+                intencion: document.getElementById('intencion').value,
+                estado_civil: document.getElementById('estado_civil').value,
+                trabajo: document.getElementById('trabajo').value,
+                educacion: document.getElementById('educacion').value,
+                habitos: Array.from(document.getElementById('habitos').selectedOptions).map(opt => opt.value).join(','),
+                estatura: document.getElementById('estatura').value,
+                color_piel: document.getElementById('color_piel').value,
+                intereses: document.getElementById('intereses').value
+            };
+            if (selectedIntereses.length < 5) {
+                alert("❌ Por favor, selecciona al menos 5 intereses para encontrar a tu persona ideal.");
+                return;
+            }
+            const btn = document.querySelector('.btn-primary');
+            btn.textContent = 'Creando cuenta...';
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/completar_registro', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const resp = await res.json();
+                if (resp.success) {
+                    window.location.href = resp.redirect;
+                } else {
+                    alert(resp.msg || "Error al crear cuenta");
+                    btn.textContent = 'Crear mi cuenta ❤️';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert("Error de conexión");
+                btn.textContent = 'Crear mi cuenta ❤️';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!-- partials/navbar_modelo.html -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="/operador/{{ perfil.id }}" class="logo">
+            <span class="logo-heart">❤️</span>
+            <span class="logo-text">Amura</span>
+        </a>
+        <div class="central-links">
+            <div class="nav-item config-dots" id="configDotsBtnModelo">⋮</div>
+            <div class="config-popup" id="configPopupModelo">
+                <div class="popup-header">
+                    <img src="/static/uploads/{{ perfil.foto_principal }}" class="popup-avatar" onerror="this.src='/static/default_user.png'">
+                    <div>
+                        <div style="font-weight: 700;">{{ perfil.nombre }}</div>
+                        <div style="font-size: 0.65rem; color: var(--text-muted);">ID: {{ perfil.id }}</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="popup-menu-item" id="showStatsBtnModelo"><i class="fas fa-chart-line"></i> Estadísticas</div>
+                    <div class="popup-divider"></div>
+                    <div class="popup-menu-item" id="customizeColorsBtnModelo"><i class="fas fa-palette"></i> Personalizar colores</div>
+                    <div class="popup-divider"></div>
+                    <a href="/logout" class="popup-menu-item" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="cover-credits" style="position: relative; top: auto; right: auto; background: linear-gradient(135deg, var(--rose), var(--rose-dark)); padding: 6px 16px; display: inline-block; margin-left: auto;">
+        <i class="fas fa-coins"></i> {{ perfil.creditos_generados }} CR
+    </div>
+</nav>
+
+<!-- MODAL DE COLORES -->
+<div id="colorModalModelo" class="modal-color" onclick="if(event.target===this) this.style.display='none'">
+    <div class="modal-color-content">
+        <h3>🎨 Personalizar colores</h3>
+        <div class="color-palette">
+            <div class="color-option color-rosa" data-theme="rosa" title="Rosa"></div>
+            <div class="color-option color-azul" data-theme="azul" title="Azul"></div>
+            <div class="color-option color-verde" data-theme="verde" title="Verde"></div>
+            <div class="color-option color-purpura" data-theme="purpura" title="Púrpura"></div>
+        </div>
+        <button id="closeColorBtnModelo" class="close-color-btn">Cerrar</button>
+    </div>
+</div>
+
+<script>
+    function applyThemeModelo(theme) {
+        document.body.className = `theme-${theme}`;
+        localStorage.setItem('theme', theme);
+    }
+
+    function openStatsModalModelo() {
+        const statsModal = document.getElementById('statsModal');
+        if (statsModal) statsModal.classList.add('active');
+    }
+
+    // Configurar popup
+    const configDotsModelo = document.getElementById('configDotsBtnModelo');
+    const configPopupModelo = document.getElementById('configPopupModelo');
+    if (configDotsModelo) {
+        configDotsModelo.addEventListener('click', function(e) {
+            e.stopPropagation();
+            configPopupModelo.classList.toggle('active');
+        });
+        document.addEventListener('click', function(event) {
+            if (configPopupModelo && !configDotsModelo.contains(event.target) && !configPopupModelo.contains(event.target)) {
+                configPopupModelo.classList.remove('active');
+            }
+        });
+    }
+
+    // Botón de estadísticas
+    const showStatsBtnModelo = document.getElementById('showStatsBtnModelo');
+    if (showStatsBtnModelo) {
+        showStatsBtnModelo.addEventListener('click', function() {
+            openStatsModalModelo();
+            if (configPopupModelo) configPopupModelo.classList.remove('active');
+        });
+    }
+
+    // Personalizar colores
+    const customizeColorsBtnModelo = document.getElementById('customizeColorsBtnModelo');
+    if (customizeColorsBtnModelo) {
+        customizeColorsBtnModelo.addEventListener('click', function() {
+            const colorModal = document.getElementById('colorModalModelo');
+            if (colorModal) colorModal.style.display = 'flex';
+            if (configPopupModelo) configPopupModelo.classList.remove('active');
+        });
+    }
+
+    // Colores
+    const colorOptionsModelo = document.querySelectorAll('.color-option');
+    colorOptionsModelo.forEach(opt => {
+        opt.addEventListener('click', () => {
+            const theme = opt.getAttribute('data-theme');
+            applyThemeModelo(theme);
+            const colorModal = document.getElementById('colorModalModelo');
+            if (colorModal) colorModal.style.display = 'none';
+        });
+    });
+
+    const closeColorBtnModelo = document.getElementById('closeColorBtnModelo');
+    if (closeColorBtnModelo) {
+        closeColorBtnModelo.addEventListener('click', () => {
+            const colorModal = document.getElementById('colorModalModelo');
+            if (colorModal) colorModal.style.display = 'none';
+        });
+    }
+
+    const savedThemeModelo = localStorage.getItem('theme');
+    if (savedThemeModelo) applyThemeModelo(savedThemeModelo);
+    else document.body.className = 'theme-rosa';
+</script>

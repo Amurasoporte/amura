@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | {{ agencia.nombre }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --rose: #ec4899;
+            --rose-dark: #be185d;
+            --primary: #6366f1;
+            --bg-light: #f5f5f7;
+            --surface: #ffffff;
+            --elevated: #f8f9fa;
+            --text: #1e1e2e;
+            --text-secondary: #6c757d;
+            --border: #eaeef2;
+            --shadow: 0 2px 8px rgba(0,0,0,0.04);
+            --success: #10b981;
+        }
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg-light);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .navbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .logo-heart {
+            background: linear-gradient(135deg, #f5a3c7, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 28px;
+        }
+        .logo-text {
+            background: linear-gradient(135deg, #f5a3c7, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+        .btn-logout {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--elevated);
+        }
+        .btn-logout:hover {
+            background: var(--surface);
+            border-color: var(--rose);
+            color: var(--rose);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .header {
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: var(--text-secondary);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        @media (max-width: 968px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .stat-card {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(236,72,153,0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--rose);
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .models-section {
+            background: var(--surface);
+            border-radius: 32px;
+            padding: 32px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 16px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 20px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .model-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .model-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .model-name {
+            font-weight: 600;
+        }
+        .model-email {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-online {
+            background: rgba(16,185,129,0.1);
+            color: var(--success);
+        }
+        .status-offline {
+            background: rgba(108,117,125,0.1);
+            color: var(--text-secondary);
+        }
+        .earnings {
+            font-weight: 700;
+            color: var(--success);
+        }
+        .info-note {
+            text-align: center;
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(236,72,153,0.05);
+            border-radius: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .info-note i {
+            color: var(--rose);
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-heart">❤️</span>
+            <span class="logo-text">Amura</span>
+        </div>
+        <a href="/logout" class="btn-logout">
+            <i class="fas fa-sign-out-alt"></i> Salir
+        </a>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>{{ agencia.nombre }}</h1>
+            <p>Panel de control y monitoreo de modelos</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-value">{{ agencia.perfiles|length }}</div>
+                <div class="stat-label">Modelos activas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(16,185,129,0.1); color: var(--success);">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="stat-value">{{ total_creditos }}</div>
+                <div class="stat-label">Créditos generados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(99,102,241,0.1); color: #6366f1;">
+                    <i class="fas fa-signal"></i>
+                </div>
+                <div class="stat-value">{{ online_count }}</div>
+                <div class="stat-label">En línea ahora</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(245,158,11,0.1); color: #f59e0b;">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-value">{{ agencia.comision }}%</div>
+                <div class="stat-label">Comisión</div>
+            </div>
+        </div>
+        
+        <div class="models-section">
+            <div class="section-header">
+                <h2 class="section-title">Modelos Registradas</h2>
+            </div>
+            
+             <table>
+                <thead>
+                     <tr>
+                        <th>Modelo</th>
+                        <th>Estado</th>
+                        <th>Ganancias</th>
+                      </tr>
+                </thead>
+                <tbody>
+                    {% for perfil in agencia.perfiles %}
+                      <tr>
+                          <td>
+                            <div class="model-info">
+                                <img src="/static/uploads/{{ perfil.foto_principal }}" class="model-avatar" onerror="this.src='/static/default_user.png'">
+                                <div>
+                                    <div class="model-name">{{ perfil.nombre }}</div>
+                                    <div class="model-email">{{ perfil.correo }}</div>
+                                </div>
+                            </div>
+                          </td>
+                          <td>
+                            <span class="status-badge {% if perfil.is_online %}status-online{% else %}status-offline{% endif %}">
+                                <i class="fas fa-circle" style="font-size: 8px;"></i>
+                                {% if perfil.is_online %}En línea{% else %}Desconectada{% endif %}
+                            </span>
+                          </td>
+                        <td class="earnings">{{ perfil.creditos_generados }} CR</td>
+                      </tr>
+                    {% else %}
+                      <tr>
+                        <td colspan="3" style="text-align: center; padding: 60px; color: var(--text-secondary);">
+                            <div style="font-size: 48px; margin-bottom: 16px;">👤</div>
+                            <p>No hay modelos registradas aún</p>
+                            <p style="font-size: 13px; margin-top: 8px;">Contacta al administrador para agregar modelos</p>
+                          </td>
+                      </tr>
+                    {% endfor %}
+                </tbody>
+             </table>
+            
+            <div class="info-note">
+                <i class="fas fa-info-circle"></i> Esta sección es solo de visualización. La gestión de modelos (crear/eliminar) es realizada exclusivamente por el administrador master.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

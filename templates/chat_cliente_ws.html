@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ perfil.nombre if perfil else 'Chats' }} | ❤️ Amura</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --rose: #ec4899;
+            --rose-dark: #be185d;
+            --rose-grad-start: #f5a3c7;
+            --rose-grad-end: #ec4899;
+            --primary: #6366f1;
+            --bg-light: #f5f5f7;
+            --surface: #ffffff;
+            --elevated: #f8f9fa;
+            --text: #1e1e2e;
+            --text-secondary: #6c757d;
+            --text-muted: #6c757d;
+            --border: #eaeef2;
+            --shadow: 0 2px 8px rgba(0,0,0,0.04);
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            --success: #10b981;
+            --hover-bg: #f9f9f9;
+            --chat-bubble-bg: #e9ecef;
+        }
+        
+        body.theme-rosa { --rose: #ec4899; --rose-dark: #be185d; --rose-grad-start: #f5a3c7; --rose-grad-end: #ec4899; }
+        body.theme-azul { --rose: #3b82f6; --rose-dark: #2563eb; --rose-grad-start: #93c5fd; --rose-grad-end: #3b82f6; }
+        body.theme-verde { --rose: #10b981; --rose-dark: #059669; --rose-grad-start: #a7f3d0; --rose-grad-end: #10b981; }
+        body.theme-purpura { --rose: #a855f7; --rose-dark: #7c3aed; --rose-grad-start: #e9d5ff; --rose-grad-end: #a855f7; }
+
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg-light); color: var(--text); overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+        /* ========== NAVBAR ========== */
+        .navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.8rem 2rem; position: relative; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .nav-container { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+        .logo-heart, .logo-text { background: linear-gradient(135deg, var(--rose-grad-start), var(--rose-grad-end)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-heart { font-size: 32px; line-height: 1; }
+        .central-links { display: flex; align-items: center; gap: 1rem; position: absolute; left: 50%; transform: translateX(-50%); }
+        .nav-item { font-size: 0.85rem; font-weight: 500; color: #2c2c2c; text-decoration: none; padding: 0.6rem 1.1rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; border: none; background: transparent; }
+        .nav-item:hover { background-color: var(--hover-bg); }
+        .btn-buy-cr { background-color: var(--rose); color: white; font-weight: 600; border-radius: 20px;}
+        .hoy-estoy-text { margin-right: 2px; text-transform: uppercase; }
+        .mood-symbol { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background-color: #f0f0f0; border-radius: 50%; font-size: 1rem; font-weight: 600; color: #999999; animation: subtleSideShake 2s ease-in-out infinite; }
+        .mood-symbol img { width: 24px; height: 24px; object-fit: contain; }
+        @keyframes subtleSideShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(1px); } 75% { transform: translateX(-1px); } }
+        .mail-text { position: relative; display: inline-block; line-height: 1; }
+        .red-dot { position: absolute; top: 50%; transform: translateY(-50%); right: -10px; width: 5px; height: 5px; background-color: #cc0000; border-radius: 50%; box-shadow: 0 0 0 1px white; animation: bounceDot 1s ease 0.5s 1, subtleBounce 3s infinite 2s; }
+        @keyframes bounceDot { 0%,100% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) translateY(-3px) scale(1.2); } }
+        @keyframes subtleBounce { 0%,100% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) translateY(-2px) scale(1.1); } }
+        .config-dots { font-size: 1.6rem; font-weight: 700; line-height: 1; cursor: pointer; margin-left: auto; position: relative; }
+        .config-popup { position: absolute; top: calc(100% + 12px); right: 0; width: 260px; background: white; border-radius: 24px; box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.2); z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(-8px); transition: 0.25s; }
+        .config-popup.active { opacity: 1; visibility: visible; transform: translateY(0); }
+        .popup-header { padding: 12px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+        .popup-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--rose); }
+        .popup-menu-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; font-size: 0.8rem; font-weight: 500; color: #2c2c2c; text-decoration: none; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
+        .popup-menu-item:hover { background: #f5f5f5; }
+        .popup-divider { height: 1px; background: var(--border); margin: 6px 0; }
+        .logout-item { color: #ef4444; }
+
+        /* MODALES */
+        .modal-mood, .modal-color, .modal-chat-bg, .modal-gifts { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1100; }
+        .modal-content-box { background: white; border-radius: 32px; padding: 2rem; text-align: center; width: 90%; max-width: 600px; }
+        
+        /* GIFs en modal */
+        .gift-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .gift-item-modal {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            text-align: center;
+            border: 1px solid rgba(236,72,153,0.2);
+        }
+        .gift-item-modal:hover {
+            transform: translateY(-6px) scale(1.02);
+            border-color: var(--rose);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.95);
+        }
+        .gift-item-modal img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            transition: transform 0.3s;
+        }
+        .gift-item-modal:hover img {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .gift-item-modal .gift-name {
+            font-size: 0.7rem;
+            margin-top: 8px;
+            color: var(--text-secondary);
+        }
+        .gift-item-modal .gift-price {
+            font-size: 0.65rem;
+            color: var(--rose);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        
+        /* Barra de GIFs - 8 GIFs visibles + botón más */
+        .gift-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 0;
+            margin-bottom: 8px;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .gift-bar::-webkit-scrollbar {
+            display: none;
+        }
+        .gift-item {
+            width: 56px;
+            height: 56px;
+            background: transparent;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            flex-shrink: 0;
+        }
+        .gift-item img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            transition: all 0.3s;
+        }
+        .gift-item:hover {
+            transform: translateY(-12px) scale(1.2);
+            animation: bounceGiftBig 0.5s ease;
+        }
+        @keyframes bounceGiftBig {
+            0% { transform: translateY(0) scale(1); }
+            30% { transform: translateY(-15px) scale(1.25); }
+            60% { transform: translateY(-8px) scale(1.15); }
+            100% { transform: translateY(-12px) scale(1.2); }
+        }
+        .gift-item:hover img {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .gift-item::after {
+            content: attr(data-cost) ' CR';
+            position: absolute;
+            bottom: -20px;
+            font-size: 8px;
+            font-weight: 600;
+            color: var(--rose);
+            opacity: 0;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .gift-item:hover::after {
+            opacity: 1;
+        }
+        .gift-more-btn {
+            background: var(--rose);
+            width: 44px;
+            height: 44px;
+            font-size: 16px;
+            color: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        .gift-more-btn:hover {
+            background: var(--rose-dark);
+            transform: translateY(-8px) scale(1.1);
+            animation: bounceGiftBig 0.4s ease;
+        }
+        
+        /* Animación de regalo - MÁS GRANDE, CENTRADA, SIN RESPLANDOR */
+        .gift-animation {
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 10000;
+            pointer-events: none;
+            animation: giftExplodeBig 1.2s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+        }
+        .gift-animation img {
+            width: 280px;
+            height: 280px;
+            object-fit: contain;
+            filter: none;
+            animation: giftFloat 0.8s ease-out;
+        }
+        @keyframes giftExplodeBig {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            20% {
+                transform: translate(-50%, -50%) scale(1.4) rotate(20deg);
+                opacity: 1;
+            }
+            40% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(-10deg);
+                opacity: 1;
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.3) rotate(5deg);
+                opacity: 1;
+            }
+            80% {
+                transform: translate(-50%, -50%) scale(1.1) translateY(-30px) rotate(0deg);
+                opacity: 0.9;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.8) translateY(-80px);
+                opacity: 0;
+            }
+        }
+        @keyframes giftFloat {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+        
+        .bg-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 1rem 0; }
+        .bg-option { width: 100%; aspect-ratio: 9/16; border-radius: 12px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; background-size: cover; background-position: center; }
+        .bg-option:hover { transform: scale(1.02); }
+        .bg-option.selected { border-color: var(--rose); box-shadow: 0 0 0 2px var(--rose); }
+
+        .main-layout { display: flex; flex: 1; padding: 16px; gap: 16px; overflow: hidden; min-height: 0; }
+        .col-profile { flex: 2; min-width: 0; background: transparent; overflow-y: auto; position: relative; scrollbar-width: none; transition: all 0.3s ease; }
+        .col-profile::-webkit-scrollbar { display: none; }
+        .col-chat:not(.closed) ~ .col-profile { flex: 1.5; max-width: 550px; }
+        .col-profile.expanded { flex: 4; max-width: none; }
+
+        .profile-cover { position: relative; border-radius: 24px; overflow: visible; background: #cbd5e1; margin-bottom: 20px; }
+        .profile-cover-photo { width: 100%; height: 260px; background-size: cover; background-position: center; background-color: #cbd5e1; border-radius: 24px; }
+        .col-profile.expanded .profile-cover-photo { height: 320px; }
+        .profile-avatar-wrapper { position: absolute; bottom: -50px; left: 24px; display: flex; align-items: flex-end; gap: 16px; z-index: 20; }
+        .profile-avatar { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.2); background-color: white; }
+        .col-profile.expanded .profile-avatar { width: 160px; height: 160px; }
+        .profile-info-overlay { background: transparent; text-shadow: 0 2px 8px rgba(0,0,0,0.5); padding-bottom: 15px; white-space: nowrap; transform: translateY(-75px); }
+        .profile-name-age { display: flex; align-items: baseline; gap: 8px; flex-wrap: nowrap; }
+        .profile-name { font-size: 1.2rem; font-weight: 700; color: white; display: inline-flex; align-items: center; gap: 6px; }
+        .profile-age { font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,0.65); }
+        .col-profile.expanded .profile-name { font-size: 1.3rem; }
+        .col-profile.expanded .profile-age { font-size: 1rem; }
+        .profile-verified { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background-color: #3b82f6; border-radius: 50%; color: white; font-size: 10px; }
+        .profile-content-spacer { margin-top: 70px; }
+        
+        .status-oval {
+            display: inline-block;
+            background: rgba(0,0,0,0.05);
+            backdrop-filter: blur(4px);
+            padding: 8px 20px;
+            border-radius: 40px;
+            margin: 12px 16px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-style: italic;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: auto;
+            max-width: calc(100% - 32px);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .status-oval:hover {
+            background: rgba(236,72,153,0.1);
+            border-color: var(--rose);
+            color: var(--rose);
+        }
+        
+        .profile-row-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 8px 12px; align-items: stretch; }
+        @media (max-width: 900px) { .profile-row-grid { grid-template-columns: 1fr; gap: 10px; } }
+        .profile-card { background: white; border-radius: 20px; padding: 12px; border: 1px solid var(--border); box-shadow: var(--card-shadow); transition: transform 0.2s ease; display: flex; flex-direction: column; }
+        .profile-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .profile-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, var(--rose-grad-start), var(--rose-grad-end)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        
+        .bio-card {
+            background: white;
+            border-radius: 20px;
+            margin: 16px 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            box-shadow: var(--card-shadow);
+        }
+        .bio-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--rose-grad-start), var(--rose-grad-end));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .bio-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            font-style: italic;
+            background: var(--elevated);
+            padding: 12px;
+            border-radius: 16px;
+        }
+        
+        .profile-info-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; flex: 1; }
+        .profile-info-item { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 6px 0; border-bottom: 1px solid var(--border); }
+        .profile-info-label { color: var(--text-secondary); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.3px; }
+        .profile-info-value { font-weight: 500; text-align: right; font-size: 0.8rem; }
+        .interests-tag { background: rgba(236, 72, 153, 0.1); color: var(--rose); padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 500; display: inline-block; margin: 3px; }
+        .searching-box { background: linear-gradient(135deg, rgba(236,72,153,0.05), rgba(99,102,241,0.05)); border-radius: 14px; padding: 8px; border: 1px solid rgba(236,72,153,0.15); flex: 1; }
+        .searching-age { font-weight: 700; font-size: 0.8rem; margin-bottom: 4px; color: var(--rose); }
+        .searching-desc { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.35; }
+        .gallery-card { margin: 6px 12px; padding: 12px; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .col-profile.expanded .gallery-grid { grid-template-columns: repeat(6, 1fr); gap: 10px; }
+        .gallery-thumb { aspect-ratio: 1; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
+        .gallery-thumb:hover { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+
+        .col-chat {
+            flex: 0 0 500px;
+            height: 100%;
+            background: var(--surface);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .col-chat.closed { flex: 0 0 0; opacity: 0; overflow: hidden; margin: 0; padding: 0; border: none; }
+        
+        .chat-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-radius: 24px 24px 0 0; position: relative; z-index: 20; }
+        .chat-header-info { display: flex; align-items: center; gap: 10px; }
+        .chat-header-info img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--rose); }
+        .chat-header-info div div:first-child { font-size: 14px; font-weight: 700; }
+        .chat-header-info div div:last-child { font-size: 10px; }
+        .chat-header-actions { display: flex; gap: 6px; align-items: center; position: relative; }
+        .icon-btn { background: var(--elevated); width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); font-size: 14px; color: var(--text-muted); cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; }
+        .icon-btn:hover { color: var(--rose); background: white; border-color: var(--rose); }
+        .icon-btn.close:hover { color: white; background: #ef4444; border-color: #ef4444; }
+        
+        .chat-dropdown {
+            position: absolute;
+            top: 55px;
+            right: 16px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            display: none;
+            overflow: hidden;
+            min-width: 140px;
+            border: 1px solid var(--border);
+        }
+        .dropdown-item {
+            padding: 8px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            transition: 0.2s;
+            color: var(--text);
+        }
+        .dropdown-item:hover { background: var(--elevated); }
+        .dropdown-item.danger { color: #ef4444; }
+        .dropdown-item.danger:hover { background: rgba(239,68,68,0.1); }
+        
+        .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; position: relative; z-index: 1; scrollbar-width: none; -ms-overflow-style: none; }
+        .chat-messages::-webkit-scrollbar { display: none; }
+        
+        .message { max-width: 75%; position: relative; display: flex; flex-direction: column; z-index: 2; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message.sent { align-self: flex-end; align-items: flex-end; }
+        .message.received { align-self: flex-start; align-items: flex-start; }
+        .bubble { padding: 8px 12px; border-radius: 18px; font-size: 13px; line-height: 1.4; max-width: 100%; word-wrap: break-word; position: relative; background: var(--chat-bubble-bg); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .sent .bubble { background: linear-gradient(135deg, var(--rose), var(--rose-dark)); color: white; border-bottom-right-radius: 4px; }
+        .received .bubble { background: var(--chat-bubble-bg); border-bottom-left-radius: 4px; border: none; }
+        
+        .bubble-footer { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 4px; font-size: 9px; }
+        .message-time { font-size: 9px; color: rgba(255,255,255,0.7); }
+        .received .message-time { color: var(--text-muted); }
+        .tick-status { display: inline-flex; align-items: center; gap: 2px; color: rgba(255,255,255,0.7); }
+        .received .tick-status { color: var(--text-muted); }
+        .tick-icon { font-size: 10px; }
+        
+        .msg-date-divider { text-align: center; margin: 16px 0 8px 0; position: relative; z-index: 2; }
+        .msg-date-divider span { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); padding: 3px 10px; border-radius: 20px; font-size: 10px; color: white; }
+        
+        .reaction-bar { position: absolute; top: -15px; background: white; border: 1px solid var(--border); border-radius: 20px; padding: 3px 6px; display: none; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10; }
+        .message.received:hover .reaction-bar { display: flex; left: 0; }
+        .message.sent:hover .reaction-bar { display: flex; right: 0; }
+        .reaction-emoji { cursor: pointer; transition: transform 0.2s; font-size: 12px; }
+        .reaction-emoji:hover { transform: scale(1.2); }
+        .active-reaction { position: absolute; bottom: -8px; right: -8px; background: white; border-radius: 50%; padding: 1px 3px; font-size: 9px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 5; }
+        
+        .chat-input-area { padding: 8px 16px; border-top: 1px solid var(--border); background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-radius: 0 0 24px 24px; position: relative; z-index: 20; }
+        .content-selector { display: flex; justify-content: space-around; margin-bottom: 6px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+        .content-selector i { color: var(--text-muted); font-size: 14px; cursor: pointer; transition: 0.2s; padding: 3px; border-radius: 50%; }
+        .content-selector i:hover { color: var(--rose); background: rgba(236,72,153,0.08); transform: translateY(-1px); }
+        .input-row { display: flex; gap: 6px; align-items: center; }
+        .msg-input { flex: 1; padding: 8px 12px; border-radius: 40px; border: 1px solid var(--border); background: rgba(255,255,255,0.9); outline: none; font-size: 12px; }
+        .send-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--rose); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: 0.2s; }
+        .send-btn:hover { transform: scale(1.03); background: var(--rose-dark); }
+        
+        .col-contacts { flex: 0 0 320px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+        .contact-box { background: var(--surface); border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; flex: 1; box-shadow: var(--shadow); }
+        .requests-list { flex: 0.4; min-height: 180px; }
+        .contacts-list { flex: 0.6; }
+        .box-header { padding: 12px 16px; font-weight: 700; border-bottom: 1px solid var(--border); background: white; border-radius: 24px 24px 0 0; }
+        .list-content { overflow-y: auto; padding: 8px; flex: 1; }
+        .contact-item { display: flex; align-items: center; padding: 10px; border-radius: 14px; cursor: pointer; transition: 0.2s; gap: 10px; border: 1px solid transparent; position: relative; }
+        .contact-item:hover, .contact-item.active { background: var(--elevated); border-color: var(--border); }
+        .contact-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+        .contact-info { flex: 1; min-width: 0; }
+        .contact-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 5px; }
+        .contact-status { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .favorite-heart { color: var(--rose); font-size: 11px; }
+        .contact-options { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0; transition: 0.2s; display: flex; gap: 3px; background: white; border-radius: 20px; padding: 3px 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .contact-item:hover .contact-options { opacity: 1; }
+        .contact-opt-btn { background: none; border: none; padding: 3px 6px; cursor: pointer; font-size: 11px; border-radius: 10px; transition: 0.2s; color: var(--text-muted); }
+        .contact-opt-btn:hover { background: var(--elevated); }
+        .contact-opt-btn.delete:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+        
+        .btn-reabrir-chat { position: fixed; bottom: 30px; right: 30px; background: var(--rose); color: white; padding: 10px 20px; border-radius: 40px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 8px 20px rgba(236,72,153,0.4); opacity: 0; pointer-events: none; transition: 0.3s; transform: translateY(20px); z-index: 200; }
+        .col-profile.expanded .btn-reabrir-chat { opacity: 1; pointer-events: all; transform: translateY(0); }
+        
+        #dynamicToastLocal { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1f2937; color: white; padding: 6px 12px; border-radius: 40px; font-size: 11px; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+        
+        @media (max-width: 1200px) { .col-chat { flex: 0 0 420px; } .col-contacts { flex: 0 0 280px; } }
+        @media (max-width: 1000px) { .col-chat { flex: 0 0 380px; } .col-contacts { flex: 0 0 260px; } }
+        @media (max-width: 768px) {
+            .profile-avatar { width: 100px; height: 100px; }
+            .profile-name { font-size: 1rem; }
+            .profile-age { font-size: 0.75rem; }
+            .profile-avatar-wrapper { bottom: -35px; left: 16px; gap: 10px; }
+            .profile-info-overlay { transform: translateY(-50px); }
+            .profile-row-grid { margin: 6px 8px; gap: 8px; }
+            .profile-card { padding: 10px; }
+            .bio-card { margin: 12px 8px; padding: 12px; }
+            .status-oval { padding: 6px 16px; font-size: 0.75rem; margin: 8px 12px; }
+            .gallery-card { margin: 4px 8px; padding: 8px; }
+            .gallery-grid { gap: 6px; }
+            .gift-item { width: 48px; height: 48px; }
+            .gift-item img { width: 40px; height: 40px; }
+            .gift-more-btn { width: 38px; height: 38px; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'partials/navbar_cliente.html' %}
+
+    <div class="main-layout">
+        <div class="col-profile" id="colProfile">
+            {% if perfil %}
+            <div class="profile-cover">
+                <div id="profileCover" class="profile-cover-photo" style="background-image: url('/static/uploads/{{ perfil.foto_portada if perfil.foto_portada and perfil.foto_portada != 'default_cover.png' else perfil.foto_principal }}');"></div>
+                <div class="profile-avatar-wrapper">
+                    <img id="profileAvatar" class="profile-avatar" src="/static/uploads/{{ perfil.foto_principal }}" alt="{{ perfil.nombre }}" onerror="this.src='/static/default_user.png'">
+                    <div class="profile-info-overlay">
+                        <div class="profile-name-age">
+                            <span class="profile-name" id="profileName">{{ perfil.nombre }}{% if perfil.verificado %}<span class="profile-verified"><i class="fas fa-check"></i></span>{% endif %}</span>
+                            <span class="profile-age" id="profileAge">{{ perfil.edad }} años{% if perfil.ubicacion and perfil.ubicacion != 'No especificada' %} • {{ perfil.ubicacion }}{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-content-spacer"></div>
+            
+            {% set estado_texto = perfil.estado_hoy if perfil.estado_hoy and perfil.estado_hoy != '' else "✨ Que estoy pensando ✨" %}
+            <div class="status-oval" id="statusOval">
+                <i class="fas fa-quote-left"></i> {{ estado_texto }} <i class="fas fa-quote-right"></i>
+            </div>
+            
+            <div class="bio-card">
+                <h3><i class="fas fa-pen-fancy"></i> Biografía</h3>
+                <div class="bio-text" id="profileBio">{{ perfil.biografia or "Hola! Encantada de conocerte 💕" }}</div>
+            </div>
+            
+            <div class="profile-row-grid">
+                <div class="profile-card">
+                    <h3><i class="fas fa-user"></i> Sobre mí</h3>
+                    <div class="profile-info-list" id="perfilInfoListCliente">
+                        {% if perfil.signo and perfil.signo != 'Sin respuesta' and perfil.signo != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">⭐ Signo</span><span class="profile-info-value" id="clienteSigno">{{ perfil.signo }}</span></div>
+                        {% endif %}
+                        {% if perfil.ubicacion and perfil.ubicacion != 'No especificada' and perfil.ubicacion != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">📍 Vivo en</span><span class="profile-info-value" id="clienteUbicacion">{{ perfil.ubicacion }}{% if perfil.pais and perfil.pais != 'No especificado' %}, {{ perfil.pais }}{% endif %}</span></div>
+                        {% elif perfil.pais and perfil.pais != 'No especificado' %}
+                        <div class="profile-info-item"><span class="profile-info-label">📍 Vivo en</span><span class="profile-info-value" id="clientePais">{{ perfil.pais }}</span></div>
+                        {% endif %}
+                        {% if perfil.trabajo and perfil.trabajo != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">💼 Trabajo</span><span class="profile-info-value" id="clienteTrabajo">{{ perfil.trabajo }}</span></div>
+                        {% endif %}
+                        {% if perfil.educacion and perfil.educacion != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">🎓 Educación</span><span class="profile-info-value" id="clienteEducacion">{{ perfil.educacion }}</span></div>
+                        {% endif %}
+                        <div class="profile-info-item"><span class="profile-info-label">🗣️ Idiomas</span><span class="profile-info-value" id="clienteIdiomas">{{ perfil.idiomas or 'Español' }}</span></div>
+                        {% if perfil.estado_civil and perfil.estado_civil != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">💍 Estado civil</span><span class="profile-info-value" id="clienteEstadoCivil">{{ perfil.estado_civil }}</span></div>
+                        {% endif %}
+                        {% if perfil.hijos and perfil.hijos != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">👶 Hijos</span><span class="profile-info-value" id="clienteHijos">{{ perfil.hijos }}</span></div>
+                        {% endif %}
+                        <div class="profile-info-item"><span class="profile-info-label">🚬 Fumo</span><span class="profile-info-value" id="clienteFumo">{% if perfil.habitos and 'Fuma' in perfil.habitos %}Sí{% else %}No{% endif %}</span></div>
+                        <div class="profile-info-item"><span class="profile-info-label">🍷 Bebo</span><span class="profile-info-value" id="clienteBebo">{% if perfil.habitos and 'Bebe' in perfil.habitos %}Sí{% else %}No{% endif %}</span></div>
+                        {% if perfil.estatura and perfil.estatura != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">📏 Estatura</span><span class="profile-info-value" id="clienteEstatura">{{ perfil.estatura }}</span></div>
+                        {% endif %}
+                        {% if perfil.tipo_cuerpo and perfil.tipo_cuerpo != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">💪 Tipo de cuerpo</span><span class="profile-info-value" id="clienteTipoCuerpo">{{ perfil.tipo_cuerpo }}</span></div>
+                        {% endif %}
+                        {% if perfil.color_ojos and perfil.color_ojos != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">👁️ Ojos</span><span class="profile-info-value" id="clienteOjos">{{ perfil.color_ojos }}</span></div>
+                        {% endif %}
+                        {% if perfil.color_pelo and perfil.color_pelo != '' %}
+                        <div class="profile-info-item"><span class="profile-info-label">💇 Pelo</span><span class="profile-info-value" id="clientePelo">{{ perfil.color_pelo }}</span></div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="profile-card">
+                    <h3><i class="fas fa-heart"></i> Intereses</h3>
+                    <div id="profileInterests">{% if perfil.intereses %}{% for interes in perfil.intereses.split(',') %}<span class="interests-tag">{{ interes.strip() }}</span>{% endfor %}{% else %}<span class="interests-tag">Música</span><span class="interests-tag">Viajes</span><span class="interests-tag">Café</span>{% endif %}</div>
+                </div>
+                
+                <div class="profile-card">
+                    <h3><i class="fas fa-search"></i> Estoy buscando</h3>
+                    <div class="searching-box">
+                        <div class="searching-age" id="profileRangoEdad">Personas de {{ perfil.edad_min|default(18) }} a {{ perfil.edad_max|default(95) }} años</div>
+                        <div class="searching-desc" id="profileBuscandoDesc">{{ perfil.buscando_desc or 'Personas interesantes, respetuosas y con ganas de conectar.' }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profile-card gallery-card">
+                <h3><i class="fas fa-images"></i> Galería</h3>
+                <div class="gallery-grid" id="galleryGrid">
+                    <div class="gallery-thumb" onclick="verFoto('/static/uploads/{{ perfil.foto_principal }}')"><img src="/static/uploads/{{ perfil.foto_principal }}" onerror="this.src='/static/default_user.png'"></div>
+                    {% for foto in perfil.fotos[:11] %}<div class="gallery-thumb" onclick="verFoto('/static/uploads/{{ foto.ruta }}')"><img src="/static/uploads/{{ foto.ruta }}" onerror="this.src='/static/default_user.png'"></div>{% endfor %}
+                </div>
+                {% if perfil.fotos|length > 11 %}<div style="text-align: center; margin-top: 8px; font-size: 11px; color: var(--text-muted);">+{{ perfil.fotos|length - 11 }} fotos más</div>{% endif %}
+            </div>
+            
+            <div style="text-align: center; padding: 12px; font-size: 10px; color: var(--text-muted);"><i class="fas fa-shield-alt"></i> Perfil verificado por Amura</div>
+            {% else %}<div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted);"><div style="text-align: center;"><i class="fas fa-user-circle" style="font-size: 64px; margin-bottom: 16px;"></i><p>Selecciona un contacto para ver su perfil</p></div></div>{% endif %}
+        </div>
+
+        <div class="col-chat" id="colChat">
+            {% if perfil %}
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <img id="chatAvatar" src="/static/uploads/{{ perfil.foto_principal }}" onerror="this.src='/static/default_user.png'">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px;" id="chatNombre">{{ perfil.nombre }}{% if perfil.verificado %}<i class="fas fa-check-circle" style="color:#3b82f6; font-size: 12px;"></i>{% endif %}</div>
+                        <div style="font-size: 10px; color: var(--success);" id="chatOnlineStatus"><i class="fas fa-circle" style="font-size: 7px;"></i> {% if perfil.is_online %}En línea ahora{% else %}Desconectado{% endif %}</div>
+                    </div>
+                </div>
+                <div class="chat-header-actions">
+                    <button class="icon-btn" id="chatMenuBtn" title="Opciones"><i class="fas fa-ellipsis-v"></i></button>
+                    <button class="icon-btn" id="changeBgBtn" title="Personalizar fondo"><i class="fas fa-palette"></i></button>
+                    <button class="icon-btn close" id="closeChatBtn" title="Cerrar chat"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="chat-dropdown" id="chatDropdown">
+                    <div class="dropdown-item" id="clearChatBtn"><i class="fas fa-trash-alt"></i> Vaciar chat</div>
+                    <div class="dropdown-item" id="blockUserBtn"><i class="fas fa-ban"></i> Bloquear usuario</div>
+                    <div class="dropdown-item danger" id="reportUserBtn"><i class="fas fa-flag"></i> Denunciar</div>
+                </div>
+            </div>
+            <div class="chat-messages" id="messagesContainer"></div>
+            <div class="chat-input-area">
+                <!-- Barra de GIFs - 8 GIFs visibles + botón más -->
+                <div class="gift-bar" id="giftBar">
+                    <div class="gift-item" data-gift="ramo_rosas" data-cost="10" onclick="enviarGift('ramo_rosas', 10, '🌹', 'Ramo de rosas')">
+                        <img src="/static/gift_sin_animacion/ramo_rosas.png" alt="Ramo de rosas">
+                    </div>
+                    <div class="gift-item" data-gift="barra_chocolate" data-cost="20" onclick="enviarGift('barra_chocolate', 20, '🍫', 'Barra de chocolate')">
+                        <img src="/static/gift_sin_animacion/Barra_de_Chocolate_Gourmet.png" alt="Barra de chocolate">
+                    </div>
+                    <div class="gift-item" data-gift="barra_chocolate_delicious" data-cost="25" onclick="enviarGift('barra_chocolate_delicious', 25, '🍫✨', 'Chocolate Delicious')">
+                        <img src="/static/gift_sin_animacion/Barra_de_Chocolate_Delicious.png" alt="Chocolate Delicious">
+                    </div>
+                    <div class="gift-item" data-gift="oso_peluche" data-cost="30" onclick="enviarGift('oso_peluche', 30, '🧸', 'Oso de peluche')">
+                        <img src="/static/gift_sin_animacion/Oso_de_Peluche.png" alt="Oso de peluche">
+                    </div>
+                    <div class="gift-item" data-gift="castillo" data-cost="60" onclick="enviarGift('castillo', 60, '🏰', 'Castillo encantado')">
+                        <img src="/static/gift_sin_animacion/Castillo.png" alt="Castillo">
+                    </div>
+                    <div class="gift-item" data-gift="corazon_diamante" data-cost="50" onclick="enviarGift('corazon_diamante', 50, '💎', 'Corazón de diamante')">
+                        <img src="/static/gift_sin_animacion/Corazón_de_Diamante_Shiny_pink.png" alt="Corazón de diamante">
+                    </div>
+                    <div class="gift-item" data-gift="corazon_diamante_giant" data-cost="150" onclick="enviarGift('corazon_diamante_giant', 150, '💎💎', 'Corazón de diamante gigante')">
+                        <img src="/static/gift_sin_animacion/Corazón_de_Diamante_giant.png" alt="Corazón de diamante gigante">
+                    </div>
+                    <div class="gift-item" data-gift="anillo_cofre" data-cost="100" onclick="enviarGift('anillo_cofre', 100, '💍', 'Anillo en cofre')">
+                        <img src="/static/gift_sin_animacion/Anillo_en_su_Cofre_Open.png" alt="Anillo en cofre">
+                    </div>
+                    <div class="gift-item gift-more-btn" id="showMoreGiftsBtn">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                </div>
+                <div class="content-selector">
+                    <i class="fas fa-comment-dots" title="Chat"></i>
+                    <i class="fas fa-envelope-open-text" title="Correo"></i>
+                    <i class="fas fa-image" title="Enviar foto" onclick="enviarFoto()"></i>
+                    <i class="fas fa-video" title="Enviar video" onclick="enviarVideo()"></i>
+                    <i class="fas fa-microphone" title="Nota de voz" onclick="enviarAudio()"></i>
+                    <i class="fas fa-icons" title="Pegatinas" onclick="abrirStickers()"></i>
+                </div>
+                <div class="input-row">
+                    <input type="text" id="messageInput" class="msg-input" placeholder="Escribe tu mensaje..." autocomplete="off">
+                    <button class="send-btn" onclick="enviarMensaje()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+            {% else %}<div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted);"><div style="text-align: center;"><i class="fas fa-comments" style="font-size: 64px; margin-bottom: 16px;"></i><h3>Inicia una conversación</h3><p>Selecciona un contacto de la lista</p></div></div>{% endif %}
+        </div>
+
+        <div class="col-contacts">
+            <div class="contact-box requests-list">
+                <div class="box-header"><span><i class="fas fa-bolt" style="color:#fbbf24;"></i> Solicitudes</span></div>
+                <div class="list-content" id="requestsList"><div style="text-align:center; padding: 20px; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Buscando...</div></div>
+            </div>
+            <div class="contact-box contacts-list">
+                <div class="box-header"><span><i class="fas fa-user-friends"></i> Mis Contactos <span id="favoritesCount" style="font-size: 10px; color: var(--rose);">(0/10 favoritos)</span></span></div>
+                <div style="padding: 6px;"><input type="text" id="searchContacts" placeholder="Buscar..." style="width: 100%; padding: 6px 10px; border-radius: 20px; border: 1px solid var(--border); font-size: 12px;"></div>
+                <div class="list-content" id="chatList"></div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-reabrir-chat" onclick="abrirChat()"><i class="fas fa-comment-dots"></i> Volver al chat</button>
+    <div id="dynamicToastLocal"></div>
+
+    <!-- MODAL DE GIFS COMPLETO -->
+    <div id="giftsModal" class="modal-chat-bg" onclick="if(event.target===this) this.style.display='none'">
+        <div class="modal-content-box">
+            <h3>🎁 Regalos especiales</h3>
+            <div class="gift-grid" id="giftGrid">
+                <div class="gift-item-modal" data-gift="ramo_rosas" data-cost="10" data-emoji="🌹" onclick="enviarGiftFromModal('ramo_rosas', 10, '🌹', 'Ramo de rosas')">
+                    <img src="/static/gift_sin_animacion/ramo_rosas.png" alt="Ramo de rosas">
+                    <div class="gift-name">Ramo de rosas</div>
+                    <div class="gift-price">10 CR</div>
+                </div>
+                <div class="gift-item-modal" data-gift="barra_chocolate" data-cost="20" data-emoji="🍫" onclick="enviarGiftFromModal('barra_chocolate', 20, '🍫', 'Barra de chocolate')">
+                    <img src="/static/gift_sin_animacion/Barra_de_Chocolate_Gourmet.png" alt="Barra de chocolate">
+                    <div class="gift-name">Barra de chocolate</div>
+                    <div class="gift-price">20 CR</div>
+                </div>
+                <div class="gift-item-modal" data-gift="barra_chocolate_delicious" data-cost="25" data-emoji="🍫✨" onclick="enviarGiftFromModal('barra_chocolate_delicious', 25, '🍫✨', 'Chocolate Delicious')">
+                    <img src="/static/gift_sin_animacion/Barra_de_Chocolate_Delicious.png" alt="Barra de chocolate Delicious">
+                    <div class="gift-name">Chocolate Delicious</div>
+                    <div class="gift-price">25 CR</div>
+                </div>
+                <div class="gift-item-modal" data-gift="oso_peluche" data-cost="30" data-emoji="🧸" onclick="enviarGiftFromModal('oso_peluche', 30, '🧸', 'Oso de peluche')">
+                    <img src="/static/gift_sin_animacion/Oso_de_Peluche.png" alt="Oso de peluche">
+                    <div class="gift-name">Oso de peluche</div>
+                    <div class="gift-price">30 CR</div>
+                </div>
+                <div class="gift-item-modal" data-gift="castillo" data-cost="60" data-emoji="🏰" onclick="enviarGiftFromModal('castillo', 60, '🏰', 'Castillo encantado')">
+                    <img src="/static/gift_sin_animacion/Castillo.png" alt="Castillo">
+                    <div class="gift-name">Castillo encantado</div>
+                    <div class="gift-price">60 CR</div>
+                </div>
+                <div class="gift-item-modal" data-gift="corazon_diamante" data-cost="50" data-emoji="💎" onclick="enviarGiftFromModal('corazon_diamante', 50, '💎', 'Corazón de diamante')">
+                    <img src="/static/gift_sin_animacion/Corazón_de_Diamante_Shiny_pink.png" alt="Corazón de diamante">
+                    <div class="gift-name">Corazón de diamante</div>
+                    <div class="gift-price">50 CR</div>
+                </div>
+                <div class="gift-item-modal" data-gift="corazon_diamante_giant" data-cost="150" data-emoji="💎💎" onclick="enviarGiftFromModal('corazon_diamante_giant', 150, '💎💎', 'Corazón de diamante gigante')">
+                    <img src="/static/gift_sin_animacion/Corazón_de_Diamante_giant.png" alt="Corazón de diamante gigante">
+                    <div class="gift-name">Corazón de diamante gigante</div>
+                    <div class="gift-price">150 CR</div>
+                </div>
+                <div class="gift-item-modal" data-gift="anillo_cofre" data-cost="100" data-emoji="💍" onclick="enviarGiftFromModal('anillo_cofre', 100, '💍', 'Anillo en cofre')">
+                    <img src="/static/gift_sin_animacion/Anillo_en_su_Cofre_Open.png" alt="Anillo en cofre">
+                    <div class="gift-name">Anillo en cofre</div>
+                    <div class="gift-price">100 CR</div>
+                </div>
+            </div>
+            <button onclick="document.getElementById('giftsModal').style.display='none'" style="margin-top: 16px; padding: 8px 20px; border-radius: 20px; border: 1px solid var(--border); cursor:pointer; font-size: 12px;">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- MODAL FONDOS DE CHAT -->
+    <div id="chatBgModal" class="modal-chat-bg" onclick="if(event.target===this) this.style.display='none'">
+        <div class="modal-content-box">
+            <h3>🎨 Personalizar fondo de chat</h3>
+            <div class="bg-options">
+                <div class="bg-option" data-bg="default" style="background: linear-gradient(135deg, #f5f5f7, #e5e7eb);"></div>
+                <div class="bg-option" data-bg="1" style="background-image: url('/static/fondo_Chats/plantilla_fondo_chat_1.jpg'); background-size: cover; background-position: center;"></div>
+                <div class="bg-option" data-bg="2" style="background-image: url('/static/fondo_Chats/plantilla_fondo_chat_2.jpg'); background-size: cover; background-position: center;"></div>
+                <div class="bg-option" data-bg="3" style="background-image: url('/static/fondo_Chats/plantilla_fondo_chat_3.jpg'); background-size: cover; background-position: center;"></div>
+                <div class="bg-option" data-bg="4" style="background-image: url('/static/fondo_Chats/plantilla_fondo_chat_4.jpg'); background-size: cover; background-position: center;"></div>
+                <div class="bg-option" data-bg="5" style="background-image: url('/static/fondo_Chats/plantilla_fondo_chat_5.jpg'); background-size: cover; background-position: center;"></div>
+                <div class="bg-option" data-bg="6" style="background-image: url('/static/fondo_Chats/plantilla_fondo_chat_6.jpg'); background-size: cover; background-position: center;"></div>
+            </div>
+            <button onclick="document.getElementById('chatBgModal').style.display='none'" style="margin-top: 16px; padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border); cursor:pointer; font-size: 12px;">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="giftAnimation" class="gift-animation" style="display: none;">
+        <img id="giftAnimImg" src="" alt="">
+    </div>
+
+    <script>
+        const socket = io();
+        const perfilId = "{{ perfil.id if perfil else '' }}";
+        const clienteId = "{{ cliente.id }}";
+        const roomName = `modelo_${perfilId}`;
+        const msgContainer = document.getElementById('messagesContainer');
+        let favoritos = JSON.parse(localStorage.getItem('favoritos') || '[]');
+        let ultimaFechaMostrada = null;
+        let mensajesCargados = false;
+        let mensajesIds = new Set();
+
+        function cerrarChat() { document.getElementById('colChat').classList.add('closed'); document.getElementById('colProfile').classList.add('expanded'); guardarMensajesLocal(); }
+        function abrirChat() { document.getElementById('colChat').classList.remove('closed'); document.getElementById('colProfile').classList.remove('expanded'); if (!mensajesCargados) cargarMensajes(); }
+        function verFoto(url) { window.open(url, '_blank'); }
+        function showToastLocal(message) { const toast = document.getElementById('dynamicToastLocal'); toast.textContent = message; toast.style.opacity = '1'; setTimeout(() => { toast.style.opacity = '0'; }, 2500); }
+        function enviarFoto() { showToastLocal('📸 Función de foto próximamente'); }
+        function enviarVideo() { showToastLocal('🎥 Función de video próximamente'); }
+        function enviarAudio() { showToastLocal('🎤 Función de audio próximamente'); }
+        function abrirStickers() { showToastLocal('😊 Pegatinas próximamente'); }
+
+        // ========== FUNCIÓN DE ANIMACIÓN DE REGALO - MÁS GRANDE ==========
+        function showGiftAnimation(giftImage, giftName) {
+            const animDiv = document.getElementById('giftAnimation');
+            const animImg = document.getElementById('giftAnimImg');
+            animImg.src = giftImage;
+            animDiv.style.display = 'block';
+            setTimeout(() => {
+                animDiv.style.display = 'none';
+            }, 1200);
+        }
+
+        // ========== ENVIAR REGALO DESDE LA BARRA ==========
+        async function enviarGift(giftKey, costo, emoji, giftName) {
+            // Envío directo sin confirmación
+            let giftImage = '';
+            switch(giftKey) {
+                case 'ramo_rosas': giftImage = '/static/gift_sin_animacion/ramo_rosas.png'; break;
+                case 'barra_chocolate': giftImage = '/static/gift_sin_animacion/Barra_de_Chocolate_Gourmet.png'; break;
+                case 'barra_chocolate_delicious': giftImage = '/static/gift_sin_animacion/Barra_de_Chocolate_Delicious.png'; break;
+                case 'oso_peluche': giftImage = '/static/gift_sin_animacion/Oso_de_Peluche.png'; break;
+                case 'castillo': giftImage = '/static/gift_sin_animacion/Castillo.png'; break;
+                case 'corazon_diamante': giftImage = '/static/gift_sin_animacion/Corazón_de_Diamante_Shiny_pink.png'; break;
+                case 'corazon_diamante_giant': giftImage = '/static/gift_sin_animacion/Corazón_de_Diamante_giant.png'; break;
+                case 'anillo_cofre': giftImage = '/static/gift_sin_animacion/Anillo_en_su_Cofre_Open.png'; break;
+                default: return;
+            }
+            
+            showGiftAnimation(giftImage, giftName);
+            socket.emit('enviar_regalo', { 
+                room: roomName, 
+                regalo: emoji, 
+                costo: costo, 
+                receptor_id: perfilId, 
+                gift_image: giftImage, 
+                gift_name: giftName,
+                emisor_nombre: "{{ cliente.nombre_real }}"
+            });
+        }
+
+        async function enviarGiftFromModal(giftKey, costo, emoji, giftName) {
+            document.getElementById('giftsModal').style.display = 'none';
+            await enviarGift(giftKey, costo, emoji, giftName);
+        }
+
+        function getTickHtml() { return '<span class="tick-icon"><i class="fas fa-check-double"></i></span>'; }
+
+        function guardarMensajesLocal() {
+            const messages = [];
+            const messageElements = document.querySelectorAll('#messagesContainer .message');
+            messageElements.forEach(el => {
+                const bubble = el.querySelector('.bubble');
+                const timeSpan = el.querySelector('.message-time');
+                const msgId = el.dataset.msgId;
+                if (bubble && timeSpan && msgId) {
+                    const bubbleContent = bubble.cloneNode(true);
+                    const footer = bubbleContent.querySelector('.bubble-footer');
+                    if (footer) footer.remove();
+                    messages.push({
+                        contenido: bubbleContent.innerText.trim(),
+                        tipo: el.classList.contains('sent') ? 'sent' : 'received',
+                        fecha: timeSpan.getAttribute('data-time') || new Date().toISOString(),
+                        msgId: msgId
+                    });
+                }
+            });
+            if (messages.length > 0) {
+                const key = `chat_${clienteId}_${perfilId}`;
+                localStorage.setItem(key, JSON.stringify(messages));
+            }
+        }
+
+        function formatMessageDate(date) {
+            const now = new Date();
+            const msgDate = new Date(date);
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (msgDate >= today) return 'Hoy';
+            if (msgDate >= yesterday) return 'Ayer';
+            if (now.getTime() - msgDate.getTime() < 7 * 24 * 60 * 60 * 1000) {
+                const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                return days[msgDate.getDay()];
+            }
+            return msgDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        }
+
+        function agregarDivisorFecha(fechaStr, fechaObj) {
+            if (ultimaFechaMostrada === fechaStr) return false;
+            ultimaFechaMostrada = fechaStr;
+            const divider = document.createElement('div');
+            divider.className = 'msg-date-divider';
+            divider.innerHTML = `<span>${fechaStr}</span>`;
+            msgContainer.appendChild(divider);
+            return true;
+        }
+
+        function formatTime(date) { return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); }
+
+        function agregarMensaje(contenido, tipo, msgId, fecha) {
+            if(!msgContainer) return;
+            if (mensajesIds.has(msgId)) return;
+            mensajesIds.add(msgId);
+            const fechaObj = new Date(fecha);
+            const fechaStr = formatMessageDate(fechaObj);
+            agregarDivisorFecha(fechaStr, fechaObj);
+            const div = document.createElement('div');
+            div.className = `message ${tipo}`;
+            div.dataset.msgId = msgId;
+            const horaStr = formatTime(fechaObj);
+            div.innerHTML = `
+                <div class="bubble" id="msg-${msgId}">
+                    ${escapeHtml(contenido)}
+                    <div class="bubble-footer">
+                        <span class="message-time" data-time="${fechaObj.toISOString()}">${horaStr}</span>
+                        <span class="tick-status">${getTickHtml()}</span>
+                    </div>
+                </div>
+                <div class="reaction-bar">
+                    <span class="reaction-emoji" onclick="enviarReaccion(${msgId}, '❤️')">❤️</span>
+                    <span class="reaction-emoji" onclick="enviarReaccion(${msgId}, '🔥')">🔥</span>
+                    <span class="reaction-emoji" onclick="enviarReaccion(${msgId}, '😂')">😂</span>
+                    <span class="reaction-emoji" onclick="enviarReaccion(${msgId}, '😍')">😍</span>
+                </div>
+            `;
+            msgContainer.appendChild(div);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+            const key = `chat_${clienteId}_${perfilId}`;
+            const savedMessages = localStorage.getItem(key);
+            let messages = savedMessages ? JSON.parse(savedMessages) : [];
+            messages.push({ contenido, tipo, fecha: fechaObj.toISOString(), msgId });
+            localStorage.setItem(key, JSON.stringify(messages));
+        }
+
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        async function enviarMensaje() {
+            const input = document.getElementById('messageInput');
+            const contenido = input.value.trim();
+            if(!contenido || !perfilId) return;
+            input.value = '';
+            const msgId = Date.now() + Math.random();
+            const fecha = new Date();
+            agregarMensaje(contenido, 'sent', msgId, fecha);
+            try {
+                const res = await fetch('/api/enviar_mensaje', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contenido, receptor_id: parseInt(perfilId) })
+                });
+                const data = await res.json();
+                if(!data.success) {
+                    alert(data.msg || 'Error al enviar mensaje');
+                    const msgElement = document.querySelector(`[data-msg-id="${msgId}"]`);
+                    if(msgElement) msgElement.remove();
+                    mensajesIds.delete(msgId);
+                }
+            } catch(e) { 
+                console.error(e);
+                const msgElement = document.querySelector(`[data-msg-id="${msgId}"]`);
+                if(msgElement) msgElement.remove();
+                mensajesIds.delete(msgId);
+                alert('Error de conexión');
+            }
+        }
+
+        function enviarReaccion(msgId, emoji) { socket.emit('reaccion_mensaje', { room: roomName, message_id: msgId, emoji: emoji }); }
+
+        function actualizarFavoritos(contactoId, nombre) {
+            if (favoritos.includes(contactoId)) {
+                favoritos = favoritos.filter(id => id !== contactoId);
+                showToastLocal(`❌ ${nombre} eliminado de favoritos`);
+            } else if (favoritos.length < 10) {
+                favoritos.unshift(contactoId);
+                showToastLocal(`❤️ ${nombre} agregado a favoritos`);
+            } else {
+                showToastLocal('⚠️ Solo puedes tener 10 favoritos');
+                return;
+            }
+            localStorage.setItem('favoritos', JSON.stringify(favoritos));
+            cargarContactos();
+        }
+
+        function eliminarConversacion(contactoId, nombre) {
+            if(confirm(`¿Eliminar conversación con ${nombre}? Los mensajes no se podrán recuperar.`)) {
+                const key = `chat_${clienteId}_${contactoId}`;
+                localStorage.removeItem(key);
+                showToastLocal(`🗑️ Conversación con ${nombre} eliminada`);
+                cargarContactos();
+                if(contactoId == perfilId) {
+                    msgContainer.innerHTML = '';
+                    ultimaFechaMostrada = null;
+                    mensajesIds.clear();
+                    mensajesCargados = false;
+                }
+            }
+        }
+
+        async function vaciarChat() {
+            if(confirm('¿Vaciar todos los mensajes de este chat? Esta acción no se puede deshacer.')) {
+                const key = `chat_${clienteId}_${perfilId}`;
+                localStorage.removeItem(key);
+                msgContainer.innerHTML = '';
+                ultimaFechaMostrada = null;
+                mensajesIds.clear();
+                mensajesCargados = false;
+                showToastLocal('💬 Chat vaciado');
+                document.getElementById('chatDropdown').style.display = 'none';
+            }
+        }
+
+        function bloquearUsuario() {
+            if(confirm('¿Bloquear a este usuario? No podrás recibir mensajes de él/ella.')) {
+                showToastLocal('🔒 Usuario bloqueado');
+                document.getElementById('chatDropdown').style.display = 'none';
+            }
+        }
+
+        function denunciarUsuario() {
+            if(confirm('¿Denunciar a este usuario? Nuestro equipo revisará el caso.')) {
+                showToastLocal('📢 Denuncia enviada. Gracias por mantener la comunidad segura.');
+                document.getElementById('chatDropdown').style.display = 'none';
+            }
+        }
+
+        function cambiarFondoChat(bgNumber) {
+            const chatContainer = document.getElementById('colChat');
+            if (bgNumber === 'default') {
+                chatContainer.style.backgroundImage = `url('/static/fondo_Chats/fondo_chats.png')`;
+            } else {
+                chatContainer.style.backgroundImage = `url('/static/fondo_Chats/plantilla_fondo_chat_${bgNumber}.jpg')`;
+            }
+            localStorage.setItem('chatBackground', bgNumber);
+        }
+
+        function loadChatBackground() {
+            const savedBg = localStorage.getItem('chatBackground');
+            const chatContainer = document.getElementById('colChat');
+            if (savedBg && savedBg !== 'default') {
+                chatContainer.style.backgroundImage = `url('/static/fondo_Chats/plantilla_fondo_chat_${savedBg}.jpg')`;
+            } else {
+                chatContainer.style.backgroundImage = `url('/static/fondo_Chats/fondo_chats.png')`;
+            }
+        }
+
+        if(perfilId) {
+            socket.on('connect', () => socket.emit('join', { room: roomName }));
+            socket.on('nuevo_mensaje', (data) => {
+                if (data.tipo_emisor === 'modelo') {
+                    if (!mensajesIds.has(data.id)) {
+                        agregarMensaje(data.contenido, 'received', data.id, new Date(data.timestamp));
+                    }
+                }
+            });
+            socket.on('recibir_regalo', (data) => {
+                // Mostrar animación del regalo
+                if (data.gift_image) {
+                    showGiftAnimation(data.gift_image, data.gift_name);
+                }
+                // Mensaje en el chat del modelo
+                agregarMensaje(`✨ Recibiste ${data.gift_name} de parte de ${data.emisor_nombre || 'un admirador'} ✨`, 'received', Date.now(), new Date());
+            });
+            socket.on('portada_actualizada', (data) => { if (data.perfil_id == perfilId) { const coverDiv = document.getElementById('profileCover'); if (coverDiv) coverDiv.style.backgroundImage = `url('/static/uploads/${data.portada_url}?t=${Date.now()}')`; showToastLocal('✨ La modelo ha actualizado su portada ✨'); } });
+            socket.on('perfil_actualizado', (data) => { if (data.perfil_id == perfilId) { actualizarPerfilCompleto(data); } });
+            socket.on('nueva_reaccion', (data) => { const bubble = document.getElementById(`msg-${data.message_id}`); if(bubble) { let reacSpan = bubble.closest('.message')?.querySelector('.active-reaction'); if(!reacSpan) { reacSpan = document.createElement('div'); reacSpan.className = 'active-reaction'; bubble.closest('.message')?.appendChild(reacSpan); } reacSpan.textContent = data.emoji; } });
+        }
+        
+        socket.on('nueva_solicitud_mingle', (data) => { const list = document.getElementById('requestsList'); if(list.innerText.includes('Buscando')) list.innerHTML = ''; const div = document.createElement('div'); div.className = 'contact-item'; div.onclick = () => window.location.href = `/chat_cliente/${data.modelo_id}`; div.innerHTML = `<img src="/static/uploads/${data.foto}" onerror="this.src='/static/default_user.png'"><div class="contact-info"><div class="contact-name">${escapeHtml(data.nombre)}</div><div class="contact-status">${escapeHtml(data.estado || 'Disponible')}</div></div><button style="background:var(--rose); color:white; border:none; padding:3px 10px; border-radius:20px; font-size:11px;">Chat</button>`; list.prepend(div); });
+
+        function actualizarPerfilCompleto(perfilData) {
+            if (perfilData.valor && perfilData.tipo === 'foto') {
+                document.getElementById('chatAvatar').src = `/static/uploads/${perfilData.valor}?t=${Date.now()}`;
+                document.getElementById('profileAvatar').src = `/static/uploads/${perfilData.valor}?t=${Date.now()}`;
+                showToastLocal('✨ La modelo ha actualizado su foto ✨');
+            } else if (perfilData.valor && perfilData.tipo === 'estado') {
+                document.getElementById('statusOval').innerHTML = `<i class="fas fa-quote-left"></i> ${escapeHtml(perfilData.valor)} <i class="fas fa-quote-right"></i>`;
+                showToastLocal('✨ La modelo ha actualizado su estado ✨');
+            } else if (perfilData.valor && perfilData.tipo === 'biografia') {
+                document.getElementById('profileBio').textContent = perfilData.valor;
+                showToastLocal('✨ La modelo ha actualizado su biografía ✨');
+            }
+        }
+
+        if(document.getElementById('messageInput')) { document.getElementById('messageInput').addEventListener('keypress', e => { if(e.key === 'Enter') enviarMensaje(); }); }
+
+        document.addEventListener('DOMContentLoaded', () => { if(perfilId) cargarMensajes(); cargarContactos(); loadChatBackground(); });
+
+        async function cargarMensajes() {
+            if (mensajesCargados) return;
+            msgContainer.innerHTML = '';
+            ultimaFechaMostrada = null;
+            mensajesIds.clear();
+            const key = `chat_${clienteId}_${perfilId}`;
+            const savedMessages = localStorage.getItem(key);
+            if (savedMessages) {
+                const messages = JSON.parse(savedMessages);
+                messages.forEach(m => { const fecha = new Date(m.fecha); const tipo = m.tipo === 'sent' ? 'sent' : 'received'; agregarMensaje(m.contenido, tipo, m.msgId || Math.random(), fecha); });
+            } else {
+                const res = await fetch(`/api/get_mensajes/${perfilId}`);
+                const data = await res.json();
+                const messagesToSave = [];
+                data.forEach(m => { const tipo = m.tipo_emisor === 'cliente' ? 'sent' : 'received'; agregarMensaje(m.contenido, tipo, m.id, new Date(m.fecha)); messagesToSave.push({ contenido: m.contenido, tipo, fecha: m.fecha, msgId: m.id }); });
+                localStorage.setItem(key, JSON.stringify(messagesToSave));
+            }
+            mensajesCargados = true;
+        }
+
+        async function toggleFav(id, nombre) { actualizarFavoritos(id, nombre); }
+        
+        async function cargarContactos() {
+            const res = await fetch('/api/mis_conversaciones');
+            const data = await res.json();
+            const list = document.getElementById('chatList');
+            list.innerHTML = '';
+            if(data.length === 0) { list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No hay contactos aún</div>'; return; }
+            const sortedContacts = [...data].sort((a, b) => {
+                const aFav = favoritos.includes(a.id);
+                const bFav = favoritos.includes(b.id);
+                if (aFav && !bFav) return -1;
+                if (!aFav && bFav) return 1;
+                return 0;
+            });
+            document.getElementById('favoritesCount').innerHTML = `(${favoritos.length}/10 favoritos)`;
+            sortedContacts.forEach(c => {
+                const isFavorite = favoritos.includes(c.id);
+                const div = document.createElement('div');
+                div.className = `contact-item ${c.id == perfilId ? 'active' : ''}`;
+                div.onclick = () => window.location.href = `/chat_cliente/${c.id}`;
+                div.innerHTML = `
+                    <img src="/static/uploads/${c.foto}" onerror="this.src='/static/default_user.png'">
+                    <div class="contact-info">
+                        <div class="contact-name">${escapeHtml(c.nombre)}${isFavorite ? '<i class="fas fa-heart favorite-heart"></i>' : ''}</div>
+                        <div class="contact-status">${escapeHtml(c.estado || 'Activo')}</div>
+                    </div>
+                    <div class="contact-options">
+                        <button class="contact-opt-btn" onclick="event.stopPropagation(); toggleFav(${c.id}, '${escapeHtml(c.nombre)}')" title="${isFavorite ? 'Quitar favorito' : 'Agregar favorito'}"><i class="fas fa-heart"></i></button>
+                        <button class="contact-opt-btn delete" onclick="event.stopPropagation(); eliminarConversacion(${c.id}, '${escapeHtml(c.nombre)}')" title="Eliminar conversación"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+        
+        document.getElementById('searchContacts')?.addEventListener('input', function(e) {
+            const val = e.target.value.toLowerCase();
+            document.querySelectorAll('#chatList .contact-item').forEach(item => {
+                const name = item.querySelector('.contact-name')?.innerText.toLowerCase() || '';
+                item.style.display = name.includes(val) ? 'flex' : 'none';
+            });
+        });
+
+        const chatMenuBtn = document.getElementById('chatMenuBtn');
+        const chatDropdown = document.getElementById('chatDropdown');
+        if (chatMenuBtn) {
+            chatMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                chatDropdown.style.display = chatDropdown.style.display === 'block' ? 'none' : 'block';
+            });
+            document.addEventListener('click', () => { if (chatDropdown) chatDropdown.style.display = 'none'; });
+        }
+        document.getElementById('clearChatBtn')?.addEventListener('click', vaciarChat);
+        document.getElementById('blockUserBtn')?.addEventListener('click', bloquearUsuario);
+        document.getElementById('reportUserBtn')?.addEventListener('click', denunciarUsuario);
+        
+        const changeBgBtn = document.getElementById('changeBgBtn');
+        const chatBgModal = document.getElementById('chatBgModal');
+        if (changeBgBtn) {
+            changeBgBtn.addEventListener('click', () => { chatBgModal.style.display = 'flex'; });
+        }
+        document.querySelectorAll('.bg-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                const bg = opt.getAttribute('data-bg');
+                cambiarFondoChat(bg);
+                chatBgModal.style.display = 'none';
+            });
+        });
+        
+        document.getElementById('closeChatBtn')?.addEventListener('click', cerrarChat);
+        
+        window.addEventListener('beforeunload', () => { guardarMensajesLocal(); });
+        
+        // Modal de GIFs
+        const showMoreGiftsBtn = document.getElementById('showMoreGiftsBtn');
+        const giftsModal = document.getElementById('giftsModal');
+        if (showMoreGiftsBtn) {
+            showMoreGiftsBtn.addEventListener('click', () => {
+                giftsModal.style.display = 'flex';
+            });
+        }
+        
+        // Función para actualizar color del botón más cuando cambia el tema
+        function updateMoreButtonColor() {
+            const moreBtn = document.getElementById('showMoreGiftsBtn');
+            if (moreBtn) {
+                const rootStyles = getComputedStyle(document.documentElement);
+                const roseColor = rootStyles.getPropertyValue('--rose').trim();
+                moreBtn.style.backgroundColor = roseColor;
+            }
+        }
+        
+        // Observar cambios en el tema
+        const observer = new MutationObserver(() => {
+            updateMoreButtonColor();
+        });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        updateMoreButtonColor();
+        
+        // Editar estado desde el óvalo
+        const statusOval = document.getElementById('statusOval');
+        if (statusOval) {
+            statusOval.addEventListener('click', async function() {
+                const estadoActual = "{{ perfil.estado_hoy }}" || '';
+                const nuevoEstado = prompt('¿Qué estás pensando?', estadoActual);
+                if (nuevoEstado !== null && nuevoEstado.trim() !== '') {
+                    const textoFinal = nuevoEstado.trim();
+                    try {
+                        const res = await fetch('/api/perfil/editar_full', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ estado_hoy: textoFinal })
+                        });
+                        if (res.ok) {
+                            statusOval.innerHTML = `<i class="fas fa-quote-left"></i> ${escapeHtml(textoFinal)} <i class="fas fa-quote-right"></i>`;
+                            showToastLocal('✅ Estado actualizado');
+                        } else {
+                            showToastLocal('❌ Error al actualizar');
+                        }
+                    } catch(err) {
+                        showToastLocal('Error de conexión');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

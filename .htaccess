@@ -1,0 +1,18 @@
+# .htaccess
+RewriteEngine On
+RewriteBase /
+
+# Configuracion para Python
+Options +ExecCGI
+AddHandler cgi-script .py
+
+# Redirigir todo a la aplicacion
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ passenger_wsgi.py/$1 [L]
+
+# Proteger archivos sensibles
+<Files "*.db">
+    Order Allow,Deny
+    Deny from all
+</Files>

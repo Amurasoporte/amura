@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASTER CONSOLE | Amura Supervisor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --rose: #ec4899;
+            --rose-dark: #be185d;
+            --primary: #6366f1;
+            --bg-light: #f5f5f7;
+            --surface: #ffffff;
+            --elevated: #f8f9fa;
+            --text: #1e1e2e;
+            --text-secondary: #6c757d;
+            --border: #eaeef2;
+            --shadow: 0 2px 8px rgba(0,0,0,0.04);
+            --delete: #ef4444;
+            --link: #38bdf8;
+            --manage: #4b5563;
+        }
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg-light);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .navbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .logo-heart {
+            background: linear-gradient(135deg, #f5a3c7, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 28px;
+        }
+        .logo-text {
+            background: linear-gradient(135deg, #f5a3c7, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 40px;
+            transition: 0.2s;
+        }
+        .nav-links a:hover {
+            background: var(--elevated);
+            color: var(--rose);
+        }
+        .btn-logout {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--elevated);
+        }
+        .btn-logout:hover {
+            background: var(--surface);
+            border-color: var(--rose);
+            color: var(--rose);
+        }
+        .container {
+            max-width: 1300px;
+            margin: auto;
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 40px;
+        }
+        @media (max-width: 1024px) {
+            .container { grid-template-columns: 1fr; }
+        }
+        .agencias-list {
+            background: var(--surface);
+            padding: 35px;
+            border-radius: 35px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .agencias-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .agencias-header h2 {
+            margin: 0;
+            font-weight: 900;
+            font-size: 20px;
+            color: var(--text);
+        }
+        .total-badge {
+            background: var(--elevated);
+            color: var(--text-secondary);
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .agencia-item {
+            background: var(--elevated);
+            padding: 25px;
+            border-radius: 25px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+            transition: 0.3s;
+        }
+        .agencia-item:hover {
+            transform: translateX(5px);
+            border-color: var(--rose);
+            background: var(--surface);
+        }
+        .agencia-info h3 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .agencia-info p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .comision-badge {
+            background: rgba(236,72,153,0.1);
+            color: var(--rose);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-manage { background: var(--manage); color: white; }
+        .btn-link { background: var(--link); color: white; }
+        .btn-delete { background: var(--delete); color: white; }
+        .btn:hover { opacity: 0.85; transform: translateY(-2px); }
+        .side-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+        }
+        .side-panel h3 {
+            margin: 0 0 24px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        label {
+            display: block;
+            margin-top: 20px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-top: 8px;
+            box-sizing: border-box;
+            font-weight: 500;
+            background: var(--elevated);
+            outline: none;
+            font-size: 14px;
+            color: var(--text);
+        }
+        input:focus, select:focus {
+            border-color: var(--rose);
+            box-shadow: 0 0 0 3px rgba(236,72,153,0.1);
+        }
+        .btn-save {
+            width: 100%;
+            background: var(--rose);
+            color: white;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            margin-top: 28px;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .btn-save:hover {
+            background: var(--rose-dark);
+            transform: translateY(-2px);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-heart">❤️</span>
+            <span class="logo-text">Amura</span>
+        </div>
+        <div class="nav-links">
+            <a href="/master">Agencias</a>
+            <a href="/superadmin/config">Configuración (Rates)</a>
+            <a href="/monitor_chat">Monitor de Chat</a>
+            <a href="/reportes">Reportes</a>
+        </div>
+        <a href="/logout" class="btn-logout">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </a>
+    </nav>
+
+    <div class="container">
+        <div class="agencias-list">
+            <div class="agencias-header">
+                <h2><i class="fas fa-building" style="color: var(--rose);"></i> AGENCIAS</h2>
+                <span class="total-badge">{{ agencias|length }} ACTIVAS</span>
+            </div>
+
+            {% for a in agencias %}
+            <div class="agencia-item">
+                <div class="agencia-info">
+                    <h3>
+                        {{ a.nombre }}
+                        <span class="comision-badge">{{ a.comision }}% comisión</span>
+                    </h3>
+                    <p><i class="fas fa-envelope"></i> {{ a.correo }} • ID: {{ a.id }}</p>
+                    <p><i class="fas fa-map-marker-alt"></i> {{ a.pais }}</p>
+                    <p style="margin-top: 8px; font-size: 11px;">
+                        <i class="fas fa-users"></i> {{ a.perfiles|length }} modelos
+                    </p>
+                </div>
+                <div class="actions">
+                    <a href="/gestionar/{{ a.id }}" class="btn btn-manage">
+                        <i class="fas fa-cog"></i> Gestionar
+                    </a>
+                    <button onclick="copiarLink('{{ a.id }}')" class="btn btn-link">
+                        <i class="fas fa-link"></i> Link
+                    </button>
+                    <button onclick="eliminarAgencia('{{ a.id }}')" class="btn btn-delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🏢</div>
+                <p>No hay agencias registradas todavía</p>
+                <p style="font-size: 13px; margin-top: 10px;">Completa el formulario para crear tu primera agencia</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="side-panel">
+            <h3>
+                <i class="fas fa-plus-circle" style="color: var(--rose);"></i>
+                Crear Agencia
+            </h3>
+            <label>Nombre de la Agencia</label>
+            <input type="text" id="nom-agencia" placeholder="Ej: Agencia Caribe" autocomplete="off">
+            <label>Correo de Acceso</label>
+            <input type="email" id="cor-agencia" placeholder="correo@agencia.com" autocomplete="off">
+            <label>Contraseña Maestra</label>
+            <input type="text" id="pass-agencia" placeholder="Clave para el dueño" autocomplete="off">
+            <label>Comisión de la Agencia (%)</label>
+            <input type="number" id="com-agencia" value="50" min="0" max="100">
+            <label>País</label>
+            <input type="text" id="pais-agencia" placeholder="País de la agencia">
+            <button onclick="registrar()" class="btn-save">
+                <i class="fas fa-save"></i> CREAR AGENCIA
+            </button>
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; text-align: center; color: var(--text-secondary);">
+                <i class="fas fa-shield-alt"></i> Los dueños de agencias podrán gestionar sus modelos
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function registrar() {
+            const nombre = document.getElementById('nom-agencia').value.trim();
+            const correo = document.getElementById('cor-agencia').value.trim();
+            const password = document.getElementById('pass-agencia').value;
+            const comision = document.getElementById('com-agencia').value;
+            const pais = document.getElementById('pais-agencia').value;
+            if(!nombre || !correo || !password) {
+                alert("❌ Completa todos los campos obligatorios");
+                return;
+            }
+            const btn = document.querySelector('.btn-save');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/crear_agencia', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ nombre, correo, password, comision, pais })
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    alert('✅ Agencia creada exitosamente');
+                    location.reload();
+                } else {
+                    alert('❌ ' + (data.msg || 'Error al crear agencia'));
+                }
+            } catch (error) {
+                alert('❌ Error de conexión');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function eliminarAgencia(id) {
+            if(confirm("⚠️ ¿Eliminar esta agencia? Se eliminarán TODAS sus modelos permanentemente.")) {
+                try {
+                    const res = await fetch(`/api/eliminar_agencia/${id}`, { method: 'DELETE' });
+                    if(res.ok) {
+                        location.reload();
+                    } else {
+                        const data = await res.json();
+                        alert("Error: " + (data.msg || "No se pudo eliminar"));
+                    }
+                } catch(e) {
+                    alert("Error de conexión");
+                }
+            }
+        }
+
+        function copiarLink(id) {
+            const link = window.location.origin + "/dashboard/" + id;
+            navigator.clipboard.writeText(link).then(() => {
+                alert("✅ Link copiado al portapapeles:\n" + link);
+            }).catch(() => {
+                prompt("Copia este enlace:", link);
+            });
+        }
+    </script>
+</body>
+</html>
