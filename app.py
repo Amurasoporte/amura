@@ -11,18 +11,35 @@ from functools import wraps
 from sqlalchemy import func
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'amura-secret-key-2024-cambiar-en-produccion'
+
+# ========== CONFIGURACIÓN ==========
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'amura-secret-key-2024-cambiar-en-produccion')
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///amura.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
+# Configurar base de datos según entorno
+if os.environ.get('DATABASE_URL'):
+    # En producción (Render) - usar PostgreSQL
+    database_url = os.environ.get('DATABASE_URL')
+    # Corregir el formato si es necesario (postgres:// -> postgresql://)
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    # En desarrollo local - usar SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///amura.db'
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configuración de archivos estáticos
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs('static/uploads/kyc', exist_ok=True)
 
 db = SQLAlchemy(app)
+
+# Socket.IO - modo threading para compatibilidad con Render
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # ============================
@@ -235,6 +252,19 @@ def init_db():
     with app.app_context():
         db.create_all()
         init_rates()
+        
+        # Crear superadmin si no existe
+        if not Agencia.query.filter_by(correo='master@amura.com').first():
+            admin = Agencia(
+                nombre='Master Admin',
+                correo='master@amura.com',
+                password_hash=generate_password_hash('master123'),
+                comision=0,
+                pais='Admin'
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("Superadmin creado correctamente")
 
 # ============================
 # RUTAS DE AUTENTICACIÓN
@@ -782,7 +812,6 @@ def operador(perfil_id):
     
     cliente_actual = Cliente.query.get(cliente_id) if cliente_id else None
     
-    # Calcular estadísticas para el modelo
     hoy = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     semana = datetime.utcnow() - timedelta(days=7)
     mes = datetime.utcnow() - timedelta(days=30)
@@ -1226,6 +1255,25 @@ def handle_perfil_actualizado(data):
     room = f"modelo_{data.get('perfil_id')}"
     emit('perfil_actualizado', data, room=room)
 
+# ============================
+# INICIO DE LA APLICACIÓN
+# ============================
 if __name__ == '__main__':
-    init_db()
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    with app.app_context():
+        db.create_all()
+        init_rates()
+        # Crear superadmin si no existe
+        if not Agencia.query.filter_by(correo='master@amura.com').first():
+            admin = Agencia(
+                nombre='Master Admin',
+                correo='master@amura.com',
+                password_hash=generate_password_hash('master123'),
+                comision=0,
+                pais='Admin'
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("✅ Superadmin creado: master@amura.com / master123")
+    
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, debug=False, host='0.0.0.0', port=port)
