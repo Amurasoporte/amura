@@ -2,26 +2,22 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Instalar dependencias del sistema necesarias para psycopg2
+# Instalar solo lo esencial (sin gcc innecesario)
 RUN apt-get update && apt-get install -y \
-    gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar requirements.txt primero (mejor para caché de Docker)
+# Copiar requirements.txt primero (mejor caché de Docker)
 COPY requirements.txt .
 
-# Instalar dependencias de Python
+# Instalar dependencias
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar el resto de la aplicación
 COPY . .
 
-# Dar permisos de ejecución al script de inicio
-RUN chmod +x start.sh
-
 # Puerto para Render
 ENV PORT=10000
 
-# Comando para iniciar la aplicación usando nuestro script
-CMD ./start.sh
+# Iniciar Gunicorn directamente (sin script intermedio)
+CMD gunicorn --bind 0.0.0.0:$PORT --workers=1 --threads=4 app:app
