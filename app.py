@@ -812,6 +812,7 @@ def operador(perfil_id):
     
     cliente_actual = Cliente.query.get(cliente_id) if cliente_id else None
     
+    # Calcular estadísticas para el modelo
     hoy = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     semana = datetime.utcnow() - timedelta(days=7)
     mes = datetime.utcnow() - timedelta(days=30)
