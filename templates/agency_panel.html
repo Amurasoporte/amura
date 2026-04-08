@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AgencyPanel - {{ agencia.nombre }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #030712; font-family: system-ui, -apple-system, sans-serif; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item.active { background: linear-gradient(90deg, rgba(168,85,247,0.2), rgba(236,72,153,0.1)); border-left: 3px solid #a855f7; color: #d8b4fe; }
+        .nav-item.active svg { color: #c084fc; }
+        .card { transition: all 0.2s ease; }
+        .card:hover { border-color: #4b5563; }
+        .gradient-text { background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .toast { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4b5563; transition: 0.3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
+        input:checked + .slider { background: linear-gradient(135deg, #a855f7, #ec4899); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .btn-primary { background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 8px 18px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-secondary { background: #1f2937; color: #94a3b8; border: 1px solid #2d2b4e; padding: 8px 18px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body class="bg-gray-950 text-white">
+
+<div class="flex h-screen overflow-hidden">
+    
+    <!-- SIDEBAR -->
+    <aside class="fixed lg:relative z-50 h-full flex flex-col bg-gray-900 border-r border-gray-800 transition-all duration-300 w-64 -translate-x-full lg:translate-x-0" id="sidebar">
+        <div class="flex items-center justify-between p-4 border-b border-gray-800 min-h-[64px]">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                </div>
+                <div><p class="text-sm font-bold gradient-text">{{ agencia.nombre }}</p><p class="text-xs text-gray-500">AgencyPanel Pro</p></div>
+            </div>
+            <button class="hidden lg:flex text-gray-400 hover:text-white" id="toggleSidebar"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white active" data-tab="dashboard"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg><span class="text-sm font-medium">Dashboard</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="models"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="text-sm font-medium">Modelos</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="connections"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13a10 10 0 0 1 14 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 20 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg><span class="text-sm font-medium">Conexiones</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="schedules"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><span class="text-sm font-medium">Horarios</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="earnings"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg><span class="text-sm font-medium">Ingresos</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="payments"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg><span class="text-sm font-medium">Pagos</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="transactions"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg><span class="text-sm font-medium">Transacciones</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="vipclients"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg><span class="text-sm font-medium">VIP Clientes</span></a>
+            <!-- LEADERBOARD ICON CHANGED TO PODIO -->
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="leaderboard"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15 8.5L22 9.5L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9.5L9 8.5L12 2Z"/></svg><span class="text-sm font-medium">Leaderboard</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="alerts"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="text-sm font-medium">Alertas</span><span class="ml-auto bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ alertas_vivo|length }}</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="competencias"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg><span class="text-sm font-medium">Competencias</span></a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="support"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg><span class="text-sm font-medium">Soporte</span></a>
+        </nav>
+        
+        <div class="p-3 border-t border-gray-800">
+            <div class="flex items-center gap-3 px-2 py-2 rounded-lg bg-gray-800/50">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0"><svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <div class="overflow-hidden"><p class="text-xs font-semibold text-white truncate">{{ agencia.nombre }}</p><p class="text-xs text-gray-500 truncate">{{ agencia.correo }}</p></div>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
+            <div class="flex items-center gap-3"><button class="lg:hidden text-gray-400 hover:text-white" id="mobileMenuBtn"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button><div><h1 class="text-sm font-semibold text-white" id="pageTitle">Dashboard</h1><p class="text-xs text-gray-500">Panel de Agencia</p></div></div>
+            <div class="flex items-center gap-3"><div class="flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 rounded-full px-3 py-1"><div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div><span class="text-xs text-green-400 font-medium">Sistema Online</span></div><div class="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full px-3 py-1"><span class="text-xs text-purple-400 font-medium">1 CR = $0.10</span></div></div>
+        </header>
+        
+        <main class="flex-1 overflow-y-auto bg-gray-950 p-4 lg:p-6">
+            
+            <!-- DASHBOARD -->
+            <div id="tab-dashboard" class="tab-content active">
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between"><div><h2 class="text-xl font-bold text-white">Panel General</h2><p class="text-sm text-gray-400">Resumen en tiempo real de tu agencia</p></div><div class="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 rounded-xl px-4 py-2"><svg class="w-4 h-4 text-purple-400 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span class="text-sm font-bold text-purple-300">{{ creditos_hoy }} Cr</span><span class="text-xs text-gray-500">en vivo</span></div></div>
+                    
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card"><div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-400">Modelos Online</span><div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center"><svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><p class="text-2xl font-bold text-white"><span id="modelosOnlineCount">{{ modelos_online }}</span><span class="text-gray-500 text-lg">/{{ total_modelos }}</span></p><p class="text-xs text-gray-500 mt-0.5">{{ total_modelos - modelos_online }} offline</p></div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card"><div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-400">Conexiones Activas</span><div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center"><svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13a10 10 0 0 1 14 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 20 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg></div></div><p class="text-2xl font-bold text-white" id="conexionesActivasCount">{{ conexiones_activas }}</p><p class="text-xs text-gray-500 mt-0.5">VIP: {{ top_modelos|selectattr('tier', 'equalto', 'VIP')|list|length }} | Premium: {{ top_modelos|selectattr('tier', 'equalto', 'Premium')|list|length }}</p></div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card"><div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-400">Cr Generados Hoy</span><div class="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center"><svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg></div></div><p class="text-2xl font-bold text-white" id="creditosHoyCount">{{ creditos_hoy }}</p><p class="text-xs text-gray-500 mt-0.5">≈ ${{ "%.2f"|format(creditos_hoy * 0.10) }} USD</p></div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card"><div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-400">Ingreso Neto Agencia</span><div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center"><svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><p class="text-2xl font-bold text-white">${{ "%.2f"|format(ingreso_neto) }}</p><p class="text-xs text-gray-500 mt-0.5">Comisión {{ agencia.comision_agencia }}% descontada</p></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-4"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">Ingresos por Hora (Cr)</h3><span class="text-xs text-gray-500">Hoy</span></div><canvas id="hourlyChart" height="180" style="max-height: 200px; width: 100%;"></canvas></div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><h3 class="text-sm font-semibold text-white flex items-center gap-2 mb-4"><svg class="w-3.5 h-3.5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Calculadora de Comisiones</h3><div class="space-y-3"><div><label class="text-xs text-gray-400">Total Generado ($)</label><input type="number" id="calcTotal" value="{{ "%.2f"|format(creditos_hoy * 0.10) }}" class="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"></div><div><label class="text-xs text-gray-400">Comisión Plataforma (%)</label><input type="number" id="calcCommission" value="{{ agencia.comision_plataforma }}" class="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"></div><button onclick="calculateCommission()" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 rounded-lg transition-colors">Calcular</button><div class="bg-gray-800 rounded-lg p-3 space-y-2 mt-2"><div class="flex justify-between text-xs"><span class="text-gray-400">Total Generado</span><span id="calcTotalDisplay" class="text-white font-medium">${{ "%.2f"|format(creditos_hoy * 0.10) }}</span></div><div class="flex justify-between text-xs"><span class="text-gray-400">Comisión Plataforma</span><span id="calcCommissionDisplay" class="text-red-400 font-medium">-${{ "%.2f"|format(creditos_hoy * 0.10 * agencia.comision_plataforma / 100) }}</span></div><div class="border-t border-gray-700 pt-2 flex justify-between text-sm"><span class="text-gray-300 font-semibold">Pago Neto Agencia</span><span id="calcNetDisplay" class="text-green-400 font-bold">${{ "%.2f"|format(ingreso_neto) }}</span></div></div></div></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white flex items-center gap-2"><svg class="w-3.5 h-3.5 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Top Modelos Hoy</h3><a href="#" onclick="switchTab('leaderboard'); return false;" class="text-xs text-purple-400 hover:text-purple-300">Ver ranking →</a></div><div class="space-y-3">{% for modelo in top_modelos[:5] %}<div class="flex items-center gap-3"><span class="text-xs text-gray-500 w-4">{{ loop.index }}</span><div class="w-2 h-2 rounded-full {% if modelo.is_online %}bg-green-400{% else %}bg-gray-600{% endif %}"></div><div class="flex-1"><div class="flex items-center gap-2"><span class="text-sm text-white font-medium">{{ modelo.nombre }}</span><span class="text-xs px-1.5 py-0.5 rounded-full {% if modelo.tier == 'VIP' %}bg-yellow-500/20 text-yellow-400{% elif modelo.tier == 'Premium' %}bg-purple-500/20 text-purple-400{% else %}bg-gray-700 text-gray-400{% endif %}">{{ modelo.tier }}</span></div><div class="flex items-center gap-2 mt-0.5"><div class="flex-1 bg-gray-800 rounded-full h-1.5"><div class="bg-gradient-to-r from-purple-500 to-pink-500 h-1.5 rounded-full" style="width: {{ modelo.completado }}%"></div></div><span class="text-xs text-gray-500">{{ modelo.completado }}%</span></div></div><div class="text-right"><p class="text-sm font-bold text-purple-300">{{ modelo.creditos_hoy }} Cr</p><p class="text-xs text-gray-500">${{ "%.2f"|format(modelo.creditos_hoy * 0.10) }}</p></div></div>{% endfor %}</div></div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white flex items-center gap-2"><svg class="w-3.5 h-3.5 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Alertas en Vivo</h3><a href="#" onclick="switchTab('alerts'); return false;" class="text-xs text-purple-400 hover:text-purple-300">Ver todas →</a></div><div class="space-y-2" id="alertsLive">{% for alerta in alertas_vivo[:4] %}<div class="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50"><div class="flex-1"><p class="text-sm {% if alerta.tipo == 'gift' %}text-purple-400{% elif alerta.tipo == 'whale' %}text-yellow-400{% else %}text-red-400{% endif %}">{{ alerta.mensaje }}</p><p class="text-xs text-gray-500 mt-0.5">{{ alerta.tiempo }}</p></div></div>{% endfor %}</div></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <a href="#" onclick="switchTab('schedules'); return false;" class="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-gray-800 rounded-xl p-4 card text-center lg:text-left"><svg class="w-5 h-5 text-gray-400 mb-2 mx-auto lg:mx-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><p class="text-sm font-semibold text-white">Horarios</p><p class="text-xs text-gray-500">{{ modelos_online }} turnos activos</p></a>
+                        <a href="#" onclick="switchTab('earnings'); return false;" class="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-gray-800 rounded-xl p-4 card text-center lg:text-left"><svg class="w-5 h-5 text-gray-400 mb-2 mx-auto lg:mx-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg><p class="text-sm font-semibold text-white">Ingresos</p><p class="text-xs text-gray-500">Análisis por hora</p></a>
+                        <a href="#" onclick="switchTab('vipclients'); return false;" class="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-gray-800 rounded-xl p-4 card text-center lg:text-left"><svg class="w-5 h-5 text-gray-400 mb-2 mx-auto lg:mx-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg><p class="text-sm font-semibold text-white">Clientes VIP</p><p class="text-xs text-gray-500">{{ vip_clientes|length }} whales activos</p></a>
+                        <a href="#" onclick="switchTab('transactions'); return false;" class="bg-gradient-to-br from-pink-500/20 to-pink-600/10 border border-gray-800 rounded-xl p-4 card text-center lg:text-left"><svg class="w-5 h-5 text-gray-400 mb-2 mx-auto lg:mx-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p class="text-sm font-semibold text-white">Transacciones</p><p class="text-xs text-gray-500">{{ transacciones|length }} hoy</p></a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- MODELOS -->
+            <div id="tab-models" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between"><div><h2 class="text-xl font-bold text-white">Modelos</h2><p class="text-sm text-gray-400">{{ modelos_online }} online · {{ total_modelos }} total</p></div><div class="flex items-center gap-2"><button class="p-2 rounded-lg bg-purple-500/20 text-purple-400"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg></button><button class="p-2 rounded-lg text-gray-500 hover:text-white"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg></button></div></div>
+                    <div class="grid grid-cols-3 gap-3"><div class="border rounded-xl p-3 text-center bg-green-500/10 border-green-500/30 text-green-400"><p class="text-2xl font-bold">{{ modelos_online }}</p><p class="text-xs mt-0.5">Óptimo</p></div><div class="border rounded-xl p-3 text-center bg-yellow-500/10 border-yellow-500/30 text-yellow-400"><p class="text-2xl font-bold">{{ top_modelos|selectattr('creditos_hoy', 'greaterthan', 500)|list|length }}</p><p class="text-xs mt-0.5">Regular</p></div><div class="border rounded-xl p-3 text-center bg-red-500/10 border-red-500/30 text-red-400"><p class="text-2xl font-bold">{{ total_modelos - modelos_online }}</p><p class="text-xs mt-0.5">Inactiva</p></div></div>
+                    <div class="flex flex-wrap gap-3"><div class="relative flex-1 min-w-48"><svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" id="searchModelo" placeholder="Buscar modelo..." class="w-full bg-gray-900 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"></div><select id="filterTier" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"><option value="all">Todos los tiers</option><option value="VIP">VIP</option><option value="Premium">Premium</option><option value="Standard">Standard</option></select><select id="filterStatus" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"><option value="all">Todos los estados</option><option value="online">Óptimo</option><option value="regular">Regular</option><option value="offline">Inactiva</option></select></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4" id="modelosGrid">{% for modelo in todos_modelos %}<div class="bg-gray-900 border rounded-xl p-4 card {% if modelo.is_online %}border-green-500/30{% elif modelo.creditos_hoy > 500 %}border-yellow-500/30{% else %}border-red-500/30{% endif %}" data-nombre="{{ modelo.nombre.lower() }}" data-tier="{{ modelo.tier }}" data-status="{% if modelo.is_online %}online{% elif modelo.creditos_hoy > 500 %}regular{% else %}offline{% endif %}"><div class="flex items-start justify-between mb-3"><div class="flex items-center gap-3"><div class="relative"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">{{ modelo.nombre[0]|upper }}</div><div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-gray-900 {% if modelo.is_online %}bg-green-400{% else %}bg-gray-600{% endif %}"></div></div><div><p class="text-sm font-semibold text-white">{{ modelo.nombre }}</p><p class="text-xs text-gray-500">{{ modelo.pais }}</p></div></div><div class="flex flex-col items-end gap-1"><span class="text-xs px-2 py-0.5 rounded-full border {% if modelo.tier == 'VIP' %}bg-yellow-500/20 text-yellow-400 border-yellow-500/30{% elif modelo.tier == 'Premium' %}bg-purple-500/20 text-purple-400 border-purple-500/30{% else %}bg-gray-700/50 text-gray-400 border-gray-600/30{% endif %}">{{ modelo.tier }}</span><div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full {% if modelo.is_online %}bg-green-400{% elif modelo.creditos_hoy > 500 %}bg-yellow-400{% else %}bg-red-400{% endif %}"></div><span class="text-xs {% if modelo.is_online %}text-green-400{% elif modelo.creditos_hoy > 500 %}text-yellow-400{% else %}text-red-400{% endif %}">{% if modelo.is_online %}Óptimo{% elif modelo.creditos_hoy > 500 %}Regular{% else %}Inactiva{% endif %}</span></div></div></div><div class="grid grid-cols-3 gap-2 mb-3"><div class="bg-gray-800 rounded-lg p-2 text-center"><p class="text-xs text-gray-500">Msgs</p><p class="text-sm font-bold text-white">{{ modelo.mensajes }}</p></div><div class="bg-gray-800 rounded-lg p-2 text-center"><p class="text-xs text-gray-500">Regalos</p><p class="text-sm font-bold text-purple-300">{{ modelo.regalos }}</p></div><div class="bg-gray-800 rounded-lg p-2 text-center"><p class="text-xs text-gray-500">Conv.</p><p class="text-sm font-bold text-green-400">{{ modelo.conversion }}%</p></div></div><div class="mb-3"><div class="flex justify-between text-xs mb-1"><span class="text-gray-400">Meta diaria</span><span class="text-white">{{ modelo.creditos_hoy }} / {{ modelo.meta_diaria }} Cr</span></div><div class="bg-gray-800 rounded-full h-2"><div class="h-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-400" style="width: {{ modelo.completado if modelo.completado <= 100 else 100 }}%"></div></div><p class="text-xs text-gray-500 mt-0.5">{{ modelo.completado if modelo.completado <= 100 else 100 }}% completado</p></div><div class="flex items-center justify-between text-xs text-gray-500 border-t border-gray-800 pt-2"><span>{{ modelo.ip }}</span><span>{{ modelo.horas_hoy }}h hoy</span><span>{% if modelo.is_online %}Ahora{% elif modelo.creditos_hoy > 0 %}Activo{% else %}Inactivo{% endif %}</span></div></div>{% endfor %}</div>
+                </div>
+            </div>
+            
+            <!-- CONEXIONES -->
+            <div id="tab-connections" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between"><div><h2 class="text-xl font-bold text-white">Conexiones</h2><p class="text-sm text-gray-400">Monitor en tiempo real</p></div><button onclick="actualizarDatosManual()" class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-3 py-2 rounded-lg"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> Actualizar</button></div>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><div class="flex items-center gap-2 mb-1"><svg class="w-3.5 h-3.5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13a10 10 0 0 1 14 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 20 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg><span class="text-xs text-gray-400">Conexiones Activas</span></div><p class="text-xl font-bold text-green-400" id="connCount">{{ conexiones_activas }}</p></div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><div class="flex items-center gap-2 mb-1"><svg class="w-3.5 h-3.5 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span class="text-xs text-gray-400">VIP Online</span></div><p class="text-xl font-bold text-yellow-400">{{ top_modelos|selectattr('tier', 'equalto', 'VIP')|selectattr('is_online')|list|length }}</p></div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><div class="flex items-center gap-2 mb-1"><svg class="w-3.5 h-3.5 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg><span class="text-xs text-gray-400">Cr en Sesiones</span></div><p class="text-xl font-bold text-purple-400">{{ creditos_hoy }} Cr</p></div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><div class="flex items-center gap-2 mb-1"><svg class="w-3.5 h-3.5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="text-xs text-gray-400">Última actualización</span></div><p class="text-xl font-bold text-blue-400" id="currentTime">--:--:--</p></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- HORARIOS -->
+            <div id="tab-schedules" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between flex-wrap gap-3"><div><h2 class="text-xl font-bold text-white">Horarios de Trabajo</h2><p class="text-sm text-gray-400">Gestión de turnos semanales</p></div><div class="flex items-center gap-2"><input type="date" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white" value="{{ ahora.strftime('%Y-%m-%d') }}"><button class="bg-purple-600 hover:bg-purple-700 text-white text-sm px-3 py-2 rounded-lg flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Ir</button></div></div>
+                    
+                    <div class="flex flex-wrap gap-2"><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs bg-blue-500/30 text-blue-300 border-blue-500/40"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg> Mañana 3h</div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs bg-blue-500/40 text-blue-200 border-blue-500/50"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg> Mañana 6h</div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs bg-orange-500/30 text-orange-300 border-orange-500/40"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10V2"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m16 6-4 4-4-4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg> Tarde 3h</div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs bg-orange-500/40 text-orange-200 border-orange-500/50"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10V2"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m16 6-4 4-4-4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg> Tarde 6h</div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs bg-purple-500/30 text-purple-300 border-purple-500/40"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> Noche 3h</div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs bg-purple-500/40 text-purple-200 border-purple-500/50"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> Noche 6h</div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs bg-green-500/30 text-green-300 border-green-500/40"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Completo 8h</div><div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs bg-gray-700/30 text-gray-500 border-gray-600/30"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg> Libre</div></div>
+                    
+                    <div class="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl px-4 py-3"><button class="text-gray-400 hover:text-white p-1 rounded"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button><div class="text-center"><p class="text-sm font-semibold text-white">{{ fechas_semana[0].dia }} {{ fechas_semana[0].nombre }} — {{ fechas_semana[6].dia }} {{ fechas_semana[6].nombre }} {{ ahora.year }}</p><p class="text-xs text-gray-500">Semana {{ semana_numero }}</p></div><button class="text-gray-400 hover:text-white p-1 rounded"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button></div>
+                    
+                    <div class="grid grid-cols-7 gap-2">{% for fecha in fechas_semana %}<div class="bg-gray-900 border border-gray-800 rounded-lg p-2 text-center"><p class="text-xs text-gray-400">{{ fecha.nombre }}</p><p class="text-xs text-white">{{ fecha.dia }}</p><p class="text-xs text-purple-400 mt-0.5">{{ fecha.activos }}/{{ total_modelos }}</p></div>{% endfor %}</div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-x-auto">
+                        <table class="w-full min-w-[700px]"><thead><tr class="border-b border-gray-800 bg-gray-800/50"><th class="px-4 py-3 text-left text-xs text-gray-400 w-36">Modelo</th>{% for fecha in fechas_semana %}<th class="px-2 py-3 text-center text-xs text-gray-400"><div>{{ fecha.nombre }}</div><div class="text-gray-600">{{ fecha.dia }}</div></th>{% endfor %}<th class="px-4 py-3 text-center text-xs text-gray-400">Hrs/Sem</th></tr></thead><tbody>{% for modelo in todos_modelos[:8] %}<tr class="border-b border-gray-800/50 hover:bg-gray-800/20"><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">{{ modelo.nombre[0]|upper }}</div><span class="text-sm text-white">{{ modelo.nombre }}</span></div></td>{% for i in range(7) %}<td class="px-1 py-2"><button class="w-full px-1 py-1.5 rounded-lg border text-xs font-medium {% if loop.index % 2 == 0 %}bg-blue-500/40 text-blue-200 border-blue-500/50{% elif loop.index % 3 == 0 %}bg-purple-500/40 text-purple-200 border-purple-500/50{% else %}bg-orange-500/40 text-orange-200 border-orange-500/50{% endif %} flex items-center justify-center gap-1"><svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{% if loop.index % 2 == 0 %}<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>{% elif loop.index % 3 == 0 %}<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>{% else %}<path d="M12 10V2"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m16 6-4 4-4-4"/><path d="M16 18a4 4 0 0 0-8 0"/>{% endif %}</svg><span class="hidden sm:inline">6h</span></button></td>{% endfor %}<td class="px-4 py-3 text-center"><span class="text-sm font-bold text-purple-300">{% set horas = [30, 33, 34, 18, 34] %}{{ horas[loop.index0 % 5] }}h</span></td>{% endfor %}</tbody></table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- INGRESOS -->
+            <div id="tab-earnings" class="tab-content">
+                <div class="space-y-5"><div class="flex items-center justify-between"><div><h2 class="text-xl font-bold text-white">Ingresos por Modelo</h2><p class="text-sm text-gray-400">Análisis por franja horaria</p></div></div><div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><canvas id="earningsChart" height="200" style="max-height: 260px; width: 100%;"></canvas></div><div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden"><div class="px-4 py-3 border-b border-gray-800"><h3 class="text-sm font-semibold text-white">Ranking en el Rango Seleccionado</h3></div><table class="w-full"><thead><tr class="border-b border-gray-800 bg-gray-800/30"><th class="px-4 py-3 text-left text-xs text-gray-400">#</th><th class="px-4 py-3 text-left text-xs text-gray-400">Modelo</th><th class="px-4 py-3 text-left text-xs text-gray-400">Total Cr</th><th class="px-4 py-3 text-left text-xs text-gray-400">Total USD</th><th class="px-4 py-3 text-left text-xs text-gray-400">Hora Pico</th><th class="px-4 py-3 text-left text-xs text-gray-400">Participación</th></thead><tbody>{% for modelo in earnings_data|sort(attribute='total', reverse=true) %}<tr class="border-b border-gray-800/50 hover:bg-gray-800/20"><td class="px-4 py-3"><span class="text-sm font-bold {% if loop.index == 1 %}text-yellow-400{% elif loop.index == 2 %}text-gray-300{% elif loop.index == 3 %}text-orange-400{% else %}text-gray-500{% endif %}">#{{ loop.index }}</span></td><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-purple-500"></div><span class="text-sm text-white">{{ modelo.nombre }}</span></div></td><td class="px-4 py-3 text-sm font-bold text-purple-300">{{ modelo.total }} Cr</td><td class="px-4 py-3 text-sm text-green-400">${{ "%.2f"|format(modelo.total * 0.10) }}</td><td class="px-4 py-3 text-sm text-gray-300">20:00</td><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="flex-1 bg-gray-800 rounded-full h-1.5 w-20"><div class="h-1.5 rounded-full bg-purple-500" style="width: {{ (modelo.total / (earnings_data|sum(attribute='total') + 1) * 100)|int }}%"></div></div><span class="text-xs text-gray-400">{{ (modelo.total / (earnings_data|sum(attribute='total') + 1) * 100)|int }}%</span></div></td></tr>{% endfor %}</tbody></table></div></div>
+            </div>
+            
+            <!-- PAGOS -->
+            <div id="tab-payments" class="tab-content">
+                <div class="space-y-5"><div><h2 class="text-xl font-bold text-white">Pagos &amp; Retiros</h2><p class="text-sm text-gray-400">Wallet de agencia y gestión de cobros</p></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="bg-gradient-to-br from-purple-900/40 to-purple-800/20 border border-purple-500/30 rounded-xl p-5"><div class="flex items-center gap-2 mb-3"><svg class="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="text-sm text-gray-300">Saldo Pendiente</span></div><p class="text-3xl font-bold text-white">${{ "%.2f"|format(ingreso_neto * 0.3) }}</p><p class="text-xs text-gray-400 mt-1">En proceso de liquidación</p></div><div class="bg-gradient-to-br from-green-900/40 to-green-800/20 border border-green-500/30 rounded-xl p-5"><div class="flex items-center gap-2 mb-3"><svg class="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg><span class="text-sm text-gray-300">Saldo Retirable</span></div><p class="text-3xl font-bold text-green-400">${{ "%.2f"|format(ingreso_neto) }}</p><p class="text-xs text-gray-400 mt-1">Disponible para retirar</p><button class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white text-sm py-2 rounded-lg flex items-center justify-center gap-2"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg> Solicitar Retiro</button></div><div class="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-500/30 rounded-xl p-5"><div class="flex items-center gap-2 mb-3"><svg class="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg><span class="text-sm text-gray-300">Total Cobrado</span></div><p class="text-3xl font-bold text-blue-400">${{ "%.2f"|format(creditos_totales * 0.10) }}</p><p class="text-xs text-gray-400 mt-1">Histórico acumulado</p></div></div><div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2"><svg class="w-3.5 h-3.5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Desglose de Comisiones</h3><div class="grid grid-cols-3 gap-4 text-center"><div><p class="text-xs text-gray-400">Generado Total</p><p class="text-xl font-bold text-white">${{ "%.2f"|format(creditos_hoy * 0.10) }}</p></div><div><p class="text-xs text-gray-400">Comisión Plataforma ({{ agencia.comision_plataforma }}%)</p><p class="text-xl font-bold text-red-400">-${{ "%.2f"|format(creditos_hoy * 0.10 * agencia.comision_plataforma / 100) }}</p></div><div><p class="text-xs text-gray-400">Pago Neto Agencia</p><p class="text-xl font-bold text-green-400">${{ "%.2f"|format(ingreso_neto) }}</p></div></div></div></div>
+            </div>
+            
+            <!-- TRANSACCIONES -->
+            <div id="tab-transactions" class="tab-content">
+                <div class="space-y-5"><div class="flex items-center justify-between"><div><h2 class="text-xl font-bold text-white">Historial de Transacciones</h2><p class="text-sm text-gray-400">{{ transacciones|length }} registros encontrados</p></div><button class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Exportar CSV</button></div><div class="grid grid-cols-3 gap-3"><div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center"><p class="text-xs text-gray-400">Total Cr</p><p class="text-xl font-bold text-purple-300">{{ creditos_totales }} Cr</p></div><div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center"><p class="text-xs text-gray-400">Total USD</p><p class="text-xl font-bold text-green-400">${{ "%.2f"|format(creditos_totales * 0.10) }}</p></div><div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center"><p class="text-xs text-gray-400">Comisión Agencia</p><p class="text-xl font-bold text-blue-400">${{ "%.2f"|format(creditos_totales * 0.10 * (100 - agencia.comision_agencia) / 100) }}</p></div></div><div class="bg-gray-900 border border-gray-800 rounded-xl overflow-x-auto"><table class="w-full min-w-[750px]"><thead><tr class="border-b border-gray-800 bg-gray-800/50"><th class="px-4 py-3 text-left text-xs text-gray-400">ID</th><th class="px-4 py-3 text-left text-xs text-gray-400">Fecha/Hora</th><th class="px-4 py-3 text-left text-xs text-gray-400">Cliente</th><th class="px-4 py-3 text-left text-xs text-gray-400">Regalo</th><th class="px-4 py-3 text-left text-xs text-gray-400">Modelo</th><th class="px-4 py-3 text-left text-xs text-gray-400">Cr</th><th class="px-4 py-3 text-left text-xs text-gray-400">USD</th><th class="px-4 py-3 text-left text-xs text-gray-400">Comisión Agencia</th></thead><tbody>{% for t in transacciones[:10] %}<tr class="border-b border-gray-800/50 hover:bg-gray-800/20"><td class="px-4 py-3 text-xs text-gray-500">{{ t.id }}</td><td class="px-4 py-3"><p class="text-xs text-gray-300">{{ t.fecha }}</p><p class="text-xs text-gray-500">{{ t.hora }}</p></td><td class="px-4 py-3"><p class="text-sm text-white">{{ t.cliente_nombre }}</p><p class="text-xs text-gray-500">{{ t.cliente_id }}</p></td><td class="px-4 py-3"><div class="flex items-center gap-1.5 text-sm text-pink-300">{{ t.regalo }}</div></td><td class="px-4 py-3 text-sm text-gray-300">{{ t.modelo_nombre }}</td><td class="px-4 py-3 text-sm font-bold text-purple-300">{{ t.creditos }} Cr</td><td class="px-4 py-3 text-sm text-gray-300">${{ "%.2f"|format(t.usd) }}</td><td class="px-4 py-3 text-sm font-bold text-green-400">${{ "%.2f"|format(t.comision_agencia) }}</td></tr>{% endfor %}</tbody></table></div></div>
+            </div>
+            
+            <!-- VIP CLIENTES -->
+            <div id="tab-vipclients" class="tab-content">
+                <div class="space-y-5"><div><h2 class="text-xl font-bold text-white">Clientes VIP — Whales CRM</h2><p class="text-sm text-gray-400">{{ vip_clientes|length }} online · {{ creditos_totales }} Cr total generado</p></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-4">{% for cliente in vip_clientes[:4] %}<div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card"><div class="flex items-start justify-between mb-3"><div class="flex items-center gap-3"><div class="relative"><div class="w-11 h-11 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-white font-bold">{{ cliente.nombre[0]|upper }}</div><div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-gray-900"></div></div><div><div class="flex items-center gap-2"><p class="text-sm font-bold text-white">{{ cliente.nombre }}</p><span class="text-xs px-2 py-0.5 rounded-full border bg-yellow-500/20 text-yellow-400">Whale</span></div><p class="text-xs text-gray-500">{{ cliente.username }} · hace pocos minutos</p></div></div><div class="text-right"><p class="text-sm font-bold text-yellow-400">{{ cliente.creditos_gastados }} Cr</p><p class="text-xs text-gray-500">${{ "%.2f"|format(cliente.creditos_gastados * 0.10) }}</p></div></div><div class="mb-3"><div class="flex justify-between text-xs mb-1"><span class="text-gray-400">Engagement Score</span></div><div class="flex items-center gap-2"><div class="flex-1 bg-gray-800 rounded-full h-1.5"><div class="h-1.5 rounded-full bg-gradient-to-r from-green-500 to-emerald-400" style="width: {{ (cliente.avg_por_sesion / 20)|int if cliente.avg_por_sesion < 2000 else 100 }}%"></div></div><span class="text-xs text-gray-400">{{ (cliente.avg_por_sesion / 20)|int if cliente.avg_por_sesion < 2000 else 100 }}%</span></div></div><div class="flex items-center justify-between text-xs text-gray-500 border-t border-gray-800 pt-2"><span>Modelo asignada</span><span>{{ cliente.sesiones }} sesiones</span><span>~{{ cliente.avg_por_sesion }} Cr/ses</span></div></div>{% endfor %}</div></div>
+            </div>
+            
+            <!-- LEADERBOARD (SOLO INFORMATIVO - Hoy/Semana/Mes) -->
+            <div id="tab-leaderboard" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between flex-wrap gap-3">
+                        <div><h2 class="text-xl font-bold text-white">Leaderboard</h2><p class="text-sm text-gray-400">Ranking de rendimiento del turno (solo informativo)</p></div>
+                        <div class="flex gap-2">
+                            <button class="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600 text-white" id="leaderboardBtnHoy">Hoy</button>
+                            <button class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400" id="leaderboardBtnSemana">Semana</button>
+                            <button class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400" id="leaderboardBtnMes">Mes</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead><tr class="border-b border-gray-800 bg-gray-800/30"><th class="px-4 py-3 text-left text-xs text-gray-400">#</th><th class="px-4 py-3 text-left text-xs text-gray-400">Modelo</th><th class="px-4 py-3 text-left text-xs text-gray-400">Tier</th><th class="px-4 py-3 text-left text-xs text-gray-400">Turno</th><th class="px-4 py-3 text-left text-xs text-gray-400">Cr</th><th class="px-4 py-3 text-left text-xs text-gray-400">USD</th><th class="px-4 py-3 text-left text-xs text-gray-400">Regalos</th><th class="px-4 py-3 text-left text-xs text-gray-400">Conv.</th></thead>
+                                <tbody id="leaderboardBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ALERTAS -->
+            <div id="tab-alerts" class="tab-content">
+                <div class="space-y-5"><div class="flex items-center justify-between flex-wrap gap-3"><div><h2 class="text-xl font-bold text-white flex items-center gap-2">Centro de Alertas<span class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ alertas_vivo|length }}</span></h2><p class="text-sm text-gray-400">{{ alertas_vivo|length }} sin leer · {{ alertas_vivo|length + 5 }} total</p></div><div class="flex items-center gap-2"><button class="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm border-green-500/40 bg-green-500/10 text-green-400"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>Sonido ON</button><button class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> Reglas</button><button class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg> Marcar todo leído</button></div></div><div class="flex flex-wrap gap-2"><button class="px-3 py-1.5 rounded-full text-xs font-medium bg-purple-600 text-white">Todas</button><button class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Sin leer ({{ alertas_vivo|length }})</button><button class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Alta prioridad</button><button class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Regalos</button><button class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800 text-gray-400">VIP</button><button class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Inactividad</button></div><div class="space-y-2">{% for alerta in alertas_vivo %}<div class="flex items-start gap-3 p-4 rounded-xl border border-l-4 {% if alerta.tipo == 'gift' %}border-purple-500/20 border-l-purple-500 bg-purple-500/10{% elif alerta.tipo == 'whale' %}border-yellow-500/20 border-l-yellow-500 bg-yellow-500/10{% else %}border-red-500/20 border-l-red-500 bg-red-500/10{% endif %}"><div class="w-8 h-8 rounded-lg flex items-center justify-center {% if alerta.tipo == 'gift' %}bg-purple-500/10{% elif alerta.tipo == 'whale' %}bg-yellow-500/10{% else %}bg-red-500/10{% endif %}"><svg class="w-4 h-4 {% if alerta.tipo == 'gift' %}text-purple-400{% elif alerta.tipo == 'whale' %}text-yellow-400{% else %}text-red-400{% endif %}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{% if alerta.tipo == 'gift' %}<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>{% elif alerta.tipo == 'whale' %}<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>{% else %}<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>{% endif %}</svg></div><div class="flex-1"><div class="flex items-center gap-2 mb-0.5"><p class="text-sm font-semibold text-white">{% if alerta.tipo == 'gift' %}Regalo de Alto Valor{% elif alerta.tipo == 'whale' %}Whale Conectado{% else %}Modelo Inactiva{% endif %}</p><div class="w-2 h-2 rounded-full bg-blue-400"></div><span class="text-xs px-1.5 py-0.5 rounded-full ml-auto {% if alerta.tipo == 'gift' or alerta.tipo == 'whale' %}bg-red-500/20 text-red-400{% else %}bg-yellow-500/20 text-yellow-400{% endif %}">{% if alerta.tipo == 'gift' or alerta.tipo == 'whale' %}Alta{% else %}Media{% endif %}</span></div><p class="text-sm text-gray-300">{{ alerta.mensaje }}</p><p class="text-xs text-gray-500 mt-1">{{ alerta.tiempo }}</p></div><button class="text-gray-600 hover:text-gray-400">×</button></div>{% endfor %}</div></div>
+            </div>
+            
+            <!-- COMPETENCIAS (MODIFICADO: CON OBJETIVOS) -->
+            <div id="tab-competencias" class="tab-content">
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">🏆 Competencias y Premios</h2>
+                            <p class="text-sm text-gray-400">Configura premios y objetivos para tus modelos</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="window.open('/leaderboard-popup', '_blank')" class="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm px-3 py-2 rounded-lg">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15 8.5L22 9.5L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9.5L9 8.5L12 2Z"/></svg> Ranking en Vivo
+                            </button>
+                            <button onclick="cargarTodosLosRankings()" class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-3 py-2 rounded-lg">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> Actualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CONFIGURACIÓN DE PREMIOS Y OBJETIVOS -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                        <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                            ⚙️ Configuración de Premios y Objetivos
+                        </h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                            <!-- Semanal -->
+                            <div class="bg-gray-800/50 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-md font-bold text-white">📅 Semanal</h4>
+                                    <label class="switch"><input type="checkbox" id="semanalActivo" onchange="toggleSemanal()"><span class="slider"></span></label>
+                                </div>
+                                <div class="space-y-2">
+                                    <div><label class="text-xs text-gray-400">🥇 1er lugar ($)</label><input type="number" id="semanalPremio1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="5" min="0"></div>
+                                    <div><label class="text-xs text-gray-400">🥈 2do lugar ($)</label><input type="number" id="semanalPremio2" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="5" min="0"></div>
+                                    <div><label class="text-xs text-gray-400">🥉 3er lugar ($)</label><input type="number" id="semanalPremio3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="5" min="0"></div>
+                                    <div><label class="text-xs text-gray-400">🎯 Objetivo (Cr)</label><input type="number" id="semanalObjetivo" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="100" min="0" value="0"></div>
+                                </div>
+                            </div>
+                            <!-- Quincenal -->
+                            <div class="bg-gray-800/50 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-md font-bold text-white">📅 Quincenal</h4>
+                                    <label class="switch"><input type="checkbox" id="quincenalActivo" onchange="toggleQuincenal()"><span class="slider"></span></label>
+                                </div>
+                                <div class="space-y-2">
+                                    <div><label class="text-xs text-gray-400">🥇 1er lugar ($)</label><input type="number" id="quincenalPremio1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="10" min="0"></div>
+                                    <div><label class="text-xs text-gray-400">🥈 2do lugar ($)</label><input type="number" id="quincenalPremio2" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="10" min="0"></div>
+                                    <div><label class="text-xs text-gray-400">🥉 3er lugar ($)</label><input type="number" id="quincenalPremio3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="10" min="0"></div>
+                                    <div><label class="text-xs text-gray-400">🎯 Objetivo (Cr)</label><input type="number" id="quincenalObjetivo" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="100" min="0" value="0"></div>
+                                </div>
+                            </div>
+                            <!-- Mensual -->
+                            <div class="bg-gray-800/50 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-md font-bold text-white">📅 Mensual</h4>
+                                    <label class="switch"><input type="checkbox" id="mensualActivo" onchange="toggleMensual()"><span class="slider"></span></label>
+                                </div>
+                                <div class="space-y-2">
+                                    <div><label class="text-xs text-gray-400">🥇 1er lugar ($)</label><input type="number" id="mensualPremio1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="20" min="0"></div>
+                                    <div><label class="text-xs text-gray-400">🥈 2do lugar ($)</label><input type="number" id="mensualPremio2" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="20" min="0"></div>
+                                    <div><label class="text-xs text-gray-400">🥉 3er lugar ($)</label><input type="number" id="mensualPremio3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="20" min="0"></div>
+                                    <div><label class="text-xs text-gray-400">🎯 Objetivo (Cr)</label><input type="number" id="mensualObjetivo" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" step="100" min="0" value="0"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end mt-4">
+                            <button onclick="guardarConfiguracionPremios()" class="btn-primary px-4 py-2 rounded-lg flex items-center gap-2"><i class="fas fa-save"></i> Guardar Configuración</button>
+                        </div>
+                    </div>
+
+                    <!-- RANKING SEMANAL -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-white flex items-center gap-2"><span class="text-xl">📅</span> Competencia Semanal <span id="semanalEstadoBadge" class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">Activa</span></h3>
+                            <button id="btnCerrarSemanal" class="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"><i class="fas fa-trophy"></i> Cerrar Semana y Pagar</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full"><thead class="bg-gray-800/30"><tr><th class="px-4 py-3 text-left text-xs text-gray-400">Puesto</th><th class="px-4 py-3 text-left text-xs text-gray-400">Modelo</th><th class="px-4 py-3 text-left text-xs text-gray-400">Puntos (Cr)</th><th class="px-4 py-3 text-left text-xs text-gray-400">Premio</th></tr></thead><tbody id="rankingSemanalBody"></tbody></table>
+                        </div>
+                        <div id="semanalSinModelos" class="text-center py-8 text-gray-500 hidden">No hay modelos que hayan alcanzado el objetivo</div>
+                    </div>
+
+                    <!-- RANKING QUINCENAL -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-white flex items-center gap-2"><span class="text-xl">📅</span> Competencia Quincenal <span id="quincenalEstadoBadge" class="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400">Inactiva</span></h3>
+                            <button id="btnCerrarQuincenal" class="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"><i class="fas fa-trophy"></i> Cerrar Quincena y Pagar</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full"><thead class="bg-gray-800/30"><tr><th class="px-4 py-3 text-left text-xs text-gray-400">Puesto</th><th class="px-4 py-3 text-left text-xs text-gray-400">Modelo</th><th class="px-4 py-3 text-left text-xs text-gray-400">Puntos (Cr)</th><th class="px-4 py-3 text-left text-xs text-gray-400">Premio</th></tr></thead><tbody id="rankingQuincenalBody"></tbody></table>
+                        </div>
+                        <div id="quincenalSinModelos" class="text-center py-8 text-gray-500 hidden">No hay modelos que hayan alcanzado el objetivo</div>
+                    </div>
+
+                    <!-- RANKING MENSUAL -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-white flex items-center gap-2"><span class="text-xl">📅</span> Competencia Mensual <span id="mensualEstadoBadge" class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">Activa</span></h3>
+                            <button id="btnCerrarMensual" class="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"><i class="fas fa-trophy"></i> Cerrar Mes y Pagar</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full"><thead class="bg-gray-800/30"><tr><th class="px-4 py-3 text-left text-xs text-gray-400">Puesto</th><th class="px-4 py-3 text-left text-xs text-gray-400">Modelo</th><th class="px-4 py-3 text-left text-xs text-gray-400">Puntos (Cr)</th><th class="px-4 py-3 text-left text-xs text-gray-400">Premio</th></tr></thead><tbody id="rankingMensualBody"></tbody></table>
+                        </div>
+                        <div id="mensualSinModelos" class="text-center py-8 text-gray-500 hidden">No hay modelos que hayan alcanzado el objetivo</div>
+                    </div>
+
+                    <!-- HISTORIAL DE PREMIOS -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div class="px-5 py-3 border-b border-gray-800">
+                            <h3 class="text-sm font-semibold text-white flex items-center gap-2"><i class="fas fa-history"></i> Historial de Premios Pagados</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full"><thead class="bg-gray-800/30"><tr><th class="px-4 py-3 text-left text-xs text-gray-400">Fecha</th><th class="px-4 py-3 text-left text-xs text-gray-400">Período</th><th class="px-4 py-3 text-left text-xs text-gray-400">Modelo</th><th class="px-4 py-3 text-left text-xs text-gray-400">Puesto</th><th class="px-4 py-3 text-left text-xs text-gray-400">Créditos</th><th class="px-4 py-3 text-left text-xs text-gray-400">Premio</th></tr></thead><tbody id="historialPremiosBody"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SOPORTE -->
+            <div id="tab-support" class="tab-content">
+                <div class="space-y-5"><div><h2 class="text-xl font-bold text-white">Soporte &amp; Comunicación</h2><p class="text-sm text-gray-400">Chat directo, avisos y material de capacitación</p></div><div class="flex gap-2 border-b border-gray-800 pb-0"><button class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-purple-500 text-purple-400"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Chat Soporte</button><button class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg> Avisos</button><button class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Capacitación</button></div><div class="bg-gray-900 border border-gray-800 rounded-xl flex flex-col h-[500px]"><div class="px-4 py-3 border-b border-gray-800 flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">S</div><div><p class="text-sm font-semibold text-white">Soporte Técnico</p><div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-green-400"></div><p class="text-xs text-green-400">En línea</p></div></div></div><div class="flex-1 overflow-y-auto p-4 space-y-3"><div class="flex justify-start"><div class="max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl text-sm bg-gray-800 text-gray-200 rounded-bl-sm"><p>¡Hola! Soy el equipo de soporte. ¿En qué podemos ayudarte hoy?</p><p class="text-xs mt-1 text-gray-500">10:30</p></div></div><div class="flex justify-end"><div class="max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl text-sm bg-purple-600 text-white rounded-br-sm"><p>Hola, tengo una pregunta sobre el cálculo de comisiones del mes pasado.</p><p class="text-xs mt-1 text-purple-200">10:31</p></div></div><div class="flex justify-start"><div class="max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl text-sm bg-gray-800 text-gray-200 rounded-bl-sm"><p>Claro, con gusto te ayudo. ¿Puedes indicarme el período exacto y el monto que ves en tu panel?</p><p class="text-xs mt-1 text-gray-500">10:32</p></div></div></div><div class="p-3 border-t border-gray-800 flex gap-2"><input placeholder="Escribe tu mensaje..." class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white"><button class="bg-purple-600 hover:bg-purple-700 text-white p-2.5 rounded-xl"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button></div></div></div>
+            </div>
+            
+        </main>
+    </div>
+</div>
+
+<div id="toast-container" class="fixed bottom-4 right-4 z-50"></div>
+
+<script>
+    const socket = io();
+    let hourlyChart, earningsChart;
+    let leaderboardPeriodo = 'hoy';
+    
+    function initCharts() {
+        const hourlyCtx = document.getElementById('hourlyChart')?.getContext('2d');
+        if (hourlyCtx) {
+            hourlyChart = new Chart(hourlyCtx, {
+                type: 'line',
+                data: { labels: ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'], datasets: [{ label: 'Cr por Hora', data: {{ horas_data|tojson }}, borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.1)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#a855f7', pointBorderColor: '#fff', pointBorderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: '#1f2937', titleColor: '#fff', bodyColor: '#9ca3af' } }, scales: { x: { grid: { color: '#1f2937' }, ticks: { color: '#6b7280', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } }, y: { grid: { color: '#1f2937' }, ticks: { color: '#6b7280' }, title: { display: true, text: 'Cr', color: '#9ca3af' } } } }
+            });
+        }
+        const earningsCtx = document.getElementById('earningsChart')?.getContext('2d');
+        if (earningsCtx) {
+            const colors = ['rgba(168, 85, 247, 0.7)', 'rgba(236, 72, 153, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(16, 185, 129, 0.7)'];
+            const datasets = [
+                {% for modelo in earnings_data[:5] -%}
+                {
+                    label: '{{ modelo.nombre }}',
+                    data: {{ modelo.datos|tojson }},
+                    backgroundColor: colors[{{ loop.index0 }}],
+                    borderRadius: 4
+                }{{ "," if not loop.last else "" }}
+                {% endfor %}
+            ];
+            earningsChart = new Chart(earningsCtx, { type: 'bar', data: { labels: ['08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22'], datasets: datasets }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { color: '#9ca3af', usePointStyle: true, boxWidth: 8 } }, tooltip: { backgroundColor: '#1f2937', titleColor: '#fff', bodyColor: '#9ca3af' } }, scales: { x: { stacked: false, grid: { display: false }, ticks: { color: '#6b7280' } }, y: { stacked: false, grid: { color: '#1f2937' }, ticks: { color: '#6b7280' }, title: { display: true, text: 'Cr', color: '#9ca3af' } } } } });
+        }
+    }
+    
+    function calculateCommission() {
+        const total = parseFloat(document.getElementById('calcTotal')?.value) || 0;
+        const commission = parseFloat(document.getElementById('calcCommission')?.value) || 0;
+        const commissionAmount = total * (commission / 100);
+        const net = total - commissionAmount;
+        if (document.getElementById('calcTotalDisplay')) document.getElementById('calcTotalDisplay').innerText = `$${total.toFixed(2)}`;
+        if (document.getElementById('calcCommissionDisplay')) document.getElementById('calcCommissionDisplay').innerText = `-$${commissionAmount.toFixed(2)}`;
+        if (document.getElementById('calcNetDisplay')) document.getElementById('calcNetDisplay').innerText = `$${net.toFixed(2)}`;
+    }
+    
+    function updateCurrentTime() {
+        const timeElement = document.getElementById('currentTime');
+        if (timeElement) { const now = new Date(); timeElement.innerText = now.toLocaleTimeString('es-ES', { hour12: false }); }
+    }
+    
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        const activeTab = document.getElementById(`tab-${tabId}`);
+        if (activeTab) activeTab.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        const activeNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+        if (activeNav) activeNav.classList.add('active');
+        const titles = { dashboard: 'Dashboard', models: 'Modelos', connections: 'Conexiones', schedules: 'Horarios', earnings: 'Ingresos', payments: 'Pagos', transactions: 'Transacciones', vipclients: 'VIP Clientes', leaderboard: 'Leaderboard', alerts: 'Alertas', competencias: 'Competencias', support: 'Soporte' };
+        const titleElement = document.getElementById('pageTitle');
+        if (titleElement) titleElement.innerText = titles[tabId] || 'Dashboard';
+        setTimeout(() => { if (tabId === 'dashboard' && hourlyChart) hourlyChart.resize(); if (tabId === 'earnings' && earningsChart) earningsChart.resize(); }, 100);
+        if (tabId === 'competencias') { cargarTodosLosRankings(); }
+        if (tabId === 'leaderboard') { cargarLeaderboard(); }
+    }
+    
+    function initSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('toggleSidebar');
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        if (toggleBtn) toggleBtn.addEventListener('click', () => sidebar.classList.toggle('-translate-x-full'));
+        if (mobileBtn) mobileBtn.addEventListener('click', () => sidebar.classList.toggle('-translate-x-full'));
+    }
+    
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `toast fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white text-sm z-50 ${type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-purple-500'}`;
+        toast.innerText = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    async function actualizarDatos() {
+        try {
+            const res = await fetch('/agency/api/stats');
+            const data = await res.json();
+            document.getElementById('modelosOnlineCount').innerText = data.modelos_online;
+            document.getElementById('conexionesActivasCount').innerText = data.conexiones_activas;
+            document.getElementById('creditosHoyCount').innerText = data.creditos_hoy;
+            if (hourlyChart && data.horas_data) { hourlyChart.data.datasets[0].data = data.horas_data; hourlyChart.update(); }
+        } catch(e) { console.error('Error:', e); }
+    }
+    
+    function actualizarDatosManual() { actualizarDatos(); showToast('✅ Datos actualizados', 'success'); }
+    
+    function initFilters() {
+        const searchInput = document.getElementById('searchModelo');
+        const filterTier = document.getElementById('filterTier');
+        const filterStatus = document.getElementById('filterStatus');
+        function aplicarFiltros() {
+            const search = searchInput?.value.toLowerCase() || '';
+            const tier = filterTier?.value || 'all';
+            const status = filterStatus?.value || 'all';
+            const modelos = document.querySelectorAll('#modelosGrid > div');
+            modelos.forEach(modelo => {
+                const nombre = modelo.dataset.nombre || '';
+                const modeloTier = modelo.dataset.tier || '';
+                const modeloStatus = modelo.dataset.status || '';
+                let show = true;
+                if (search && !nombre.includes(search)) show = false;
+                if (tier !== 'all' && modeloTier !== tier) show = false;
+                if (status !== 'all' && modeloStatus !== status) show = false;
+                modelo.style.display = show ? '' : 'none';
+            });
+        }
+        if (searchInput) searchInput.addEventListener('input', aplicarFiltros);
+        if (filterTier) filterTier.addEventListener('change', aplicarFiltros);
+        if (filterStatus) filterStatus.addEventListener('change', aplicarFiltros);
+    }
+    
+    // ========== LEADERBOARD (SOLO INFORMATIVO) ==========
+    async function cargarLeaderboard() {
+        try {
+            let url = '';
+            if (leaderboardPeriodo === 'hoy') url = '/agency/api/leaderboard/hoy';
+            else if (leaderboardPeriodo === 'semana') url = '/agency/api/leaderboard/semanal';
+            else url = '/agency/api/leaderboard/mensual';
+            
+            const res = await fetch(url);
+            const data = await res.json();
+            const tbody = document.getElementById('leaderboardBody');
+            
+            if (data.ranking.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500 py-8">No hay datos disponibles</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.ranking.map((item, idx) => {
+                const puestoIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}°`;
+                const turno = idx % 2 === 0 ? 'Mañana' : 'Noche';
+                return `
+                    <tr class="border-b border-gray-800/50 hover:bg-gray-800/20">
+                        <td class="px-4 py-3"><span class="text-sm font-bold ${idx === 0 ? 'text-yellow-400' : idx === 1 ? 'text-gray-300' : idx === 2 ? 'text-orange-400' : 'text-gray-500'}">${puestoIcon}</span></td>
+                        <td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">${item.nombre.charAt(0).toUpperCase()}</div><span class="text-sm text-white">${item.nombre}</span></div></td>
+                        <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Standard</span></td>
+                        <td class="px-4 py-3 text-xs text-gray-400">${turno}</td>
+                        <td class="px-4 py-3 text-sm font-bold text-purple-300">${item.creditos.toLocaleString()} Cr</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">$${(item.creditos * 0.10).toLocaleString()} </td>
+                        <td class="px-4 py-3 text-sm text-pink-400">0</td>
+                        <td class="px-4 py-3 text-sm text-green-400">0%</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch(e) { console.error(e); }
+    }
+    
+    // ========== COMPETENCIAS ==========
+    let premiosConfig = {};
+    
+    async function cargarConfiguracionPremios() {
+        try {
+            const res = await fetch('/agency/api/premios-config');
+            const data = await res.json();
+            premiosConfig = data;
+            document.getElementById('semanalActivo').checked = data.semanal_activo;
+            document.getElementById('semanalPremio1').value = data.semanal_premio1;
+            document.getElementById('semanalPremio2').value = data.semanal_premio2;
+            document.getElementById('semanalPremio3').value = data.semanal_premio3;
+            document.getElementById('semanalObjetivo').value = data.semanal_objetivo || 0;
+            document.getElementById('quincenalActivo').checked = data.quincenal_activo;
+            document.getElementById('quincenalPremio1').value = data.quincenal_premio1;
+            document.getElementById('quincenalPremio2').value = data.quincenal_premio2;
+            document.getElementById('quincenalPremio3').value = data.quincenal_premio3;
+            document.getElementById('quincenalObjetivo').value = data.quincenal_objetivo || 0;
+            document.getElementById('mensualActivo').checked = data.mensual_activo;
+            document.getElementById('mensualPremio1').value = data.mensual_premio1;
+            document.getElementById('mensualPremio2').value = data.mensual_premio2;
+            document.getElementById('mensualPremio3').value = data.mensual_premio3;
+            document.getElementById('mensualObjetivo').value = data.mensual_objetivo || 0;
+            toggleSemanal();
+            toggleQuincenal();
+            toggleMensual();
+        } catch(e) { console.error(e); }
+    }
+    
+    function toggleSemanal() {
+        const activo = document.getElementById('semanalActivo').checked;
+        const inputs = ['semanalPremio1', 'semanalPremio2', 'semanalPremio3', 'semanalObjetivo'];
+        inputs.forEach(id => { document.getElementById(id).disabled = !activo; });
+    }
+    
+    function toggleQuincenal() {
+        const activo = document.getElementById('quincenalActivo').checked;
+        const inputs = ['quincenalPremio1', 'quincenalPremio2', 'quincenalPremio3', 'quincenalObjetivo'];
+        inputs.forEach(id => { document.getElementById(id).disabled = !activo; });
+    }
+    
+    function toggleMensual() {
+        const activo = document.getElementById('mensualActivo').checked;
+        const inputs = ['mensualPremio1', 'mensualPremio2', 'mensualPremio3', 'mensualObjetivo'];
+        inputs.forEach(id => { document.getElementById(id).disabled = !activo; });
+    }
+    
+    async function guardarConfiguracionPremios() {
+        const data = {
+            semanal_activo: document.getElementById('semanalActivo').checked,
+            semanal_premio1: parseFloat(document.getElementById('semanalPremio1').value) || 0,
+            semanal_premio2: parseFloat(document.getElementById('semanalPremio2').value) || 0,
+            semanal_premio3: parseFloat(document.getElementById('semanalPremio3').value) || 0,
+            semanal_objetivo: parseFloat(document.getElementById('semanalObjetivo').value) || 0,
+            quincenal_activo: document.getElementById('quincenalActivo').checked,
+            quincenal_premio1: parseFloat(document.getElementById('quincenalPremio1').value) || 0,
+            quincenal_premio2: parseFloat(document.getElementById('quincenalPremio2').value) || 0,
+            quincenal_premio3: parseFloat(document.getElementById('quincenalPremio3').value) || 0,
+            quincenal_objetivo: parseFloat(document.getElementById('quincenalObjetivo').value) || 0,
+            mensual_activo: document.getElementById('mensualActivo').checked,
+            mensual_premio1: parseFloat(document.getElementById('mensualPremio1').value) || 0,
+            mensual_premio2: parseFloat(document.getElementById('mensualPremio2').value) || 0,
+            mensual_premio3: parseFloat(document.getElementById('mensualPremio3').value) || 0,
+            mensual_objetivo: parseFloat(document.getElementById('mensualObjetivo').value) || 0
+        };
+        try {
+            const res = await fetch('/agency/api/premios-config/actualizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            if (res.ok) { showToast('✅ Configuración guardada', 'success'); cargarTodosLosRankings(); }
+            else { showToast('❌ Error al guardar', 'error'); }
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+    
+    async function cargarRankingSemanal() {
+        try {
+            const res = await fetch('/agency/api/leaderboard/semanal');
+            const data = await res.json();
+            const tbody = document.getElementById('rankingSemanalBody');
+            const sinModelosDiv = document.getElementById('semanalSinModelos');
+            const estadoBadge = document.getElementById('semanalEstadoBadge');
+            const btnCerrar = document.getElementById('btnCerrarSemanal');
+            
+            if (data.activo) {
+                estadoBadge.className = 'text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400';
+                estadoBadge.innerText = 'Activa';
+                btnCerrar.disabled = false;
+                btnCerrar.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                estadoBadge.className = 'text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400';
+                estadoBadge.innerText = 'Inactiva';
+                btnCerrar.disabled = true;
+                btnCerrar.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            
+            if (data.ranking.length === 0) {
+                tbody.innerHTML = '';
+                sinModelosDiv.classList.remove('hidden');
+                return;
+            }
+            sinModelosDiv.classList.add('hidden');
+            
+            tbody.innerHTML = data.ranking.slice(0, 10).map((item, idx) => {
+                let premio = '';
+                if (idx === 0 && data.premios[0]) premio = `$${data.premios[0]}`;
+                else if (idx === 1 && data.premios[1]) premio = `$${data.premios[1]}`;
+                else if (idx === 2 && data.premios[2]) premio = `$${data.premios[2]}`;
+                const puestoIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}°`;
+                return `<tr class="border-b border-gray-800/50 hover:bg-gray-800/20"><td class="px-4 py-3"><span class="text-sm font-bold ${idx === 0 ? 'text-yellow-400' : idx === 1 ? 'text-gray-300' : idx === 2 ? 'text-orange-400' : 'text-gray-500'}">${puestoIcon}</span></td><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">${item.nombre.charAt(0).toUpperCase()}</div><span class="text-sm text-white">${item.nombre}</span></div></td><td class="px-4 py-3 text-sm font-bold text-purple-300">${item.creditos.toLocaleString()} Cr</td><td class="px-4 py-3 text-sm font-bold text-green-400">${premio}</td></tr>`;
+            }).join('');
+        } catch(e) { console.error(e); }
+    }
+    
+    async function cargarRankingMensual() {
+        try {
+            const res = await fetch('/agency/api/leaderboard/mensual');
+            const data = await res.json();
+            const tbody = document.getElementById('rankingMensualBody');
+            const sinModelosDiv = document.getElementById('mensualSinModelos');
+            const estadoBadge = document.getElementById('mensualEstadoBadge');
+            const btnCerrar = document.getElementById('btnCerrarMensual');
+            
+            if (data.activo) {
+                estadoBadge.className = 'text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400';
+                estadoBadge.innerText = 'Activa';
+                btnCerrar.disabled = false;
+                btnCerrar.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                estadoBadge.className = 'text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400';
+                estadoBadge.innerText = 'Inactiva';
+                btnCerrar.disabled = true;
+                btnCerrar.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            
+            if (data.ranking.length === 0) {
+                tbody.innerHTML = '';
+                sinModelosDiv.classList.remove('hidden');
+                return;
+            }
+            sinModelosDiv.classList.add('hidden');
+            
+            tbody.innerHTML = data.ranking.slice(0, 10).map((item, idx) => {
+                let premio = '';
+                if (idx === 0 && data.premios[0]) premio = `$${data.premios[0]}`;
+                else if (idx === 1 && data.premios[1]) premio = `$${data.premios[1]}`;
+                else if (idx === 2 && data.premios[2]) premio = `$${data.premios[2]}`;
+                const puestoIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}°`;
+                return `<tr class="border-b border-gray-800/50 hover:bg-gray-800/20"><td class="px-4 py-3"><span class="text-sm font-bold ${idx === 0 ? 'text-yellow-400' : idx === 1 ? 'text-gray-300' : idx === 2 ? 'text-orange-400' : 'text-gray-500'}">${puestoIcon}</span></td><td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">${item.nombre.charAt(0).toUpperCase()}</div><span class="text-sm text-white">${item.nombre}</span></div></td><td class="px-4 py-3 text-sm font-bold text-purple-300">${item.creditos.toLocaleString()} Cr</td><td class="px-4 py-3 text-sm font-bold text-green-400">${premio}</td></tr>`;
+            }).join('');
+        } catch(e) { console.error(e); }
+    }
+    
+    async function cargarHistorialPremios() {
+        try {
+            const res = await fetch('/agency/api/gastos-premios');
+            const gastos = await res.json();
+            const tbody = document.getElementById('historialPremiosBody');
+            if (gastos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-8">No hay premios registrados aún</td></tr>';
+                return;
+            }
+            tbody.innerHTML = gastos.map(g => `
+                <tr class="border-b border-gray-800/50 hover:bg-gray-800/20">
+                    <td class="px-4 py-3 text-xs text-gray-400">${g.fecha_pago}</td>
+                    <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">${g.periodo}</span></td>
+                    <td class="px-4 py-3 text-sm text-white">${g.modelo_nombre}</td>
+                    <td class="px-4 py-3"><span class="text-sm font-bold ${g.puesto === 1 ? 'text-yellow-400' : g.puesto === 2 ? 'text-gray-300' : 'text-orange-400'}">${g.puesto}° lugar</span></td>
+                    <td class="px-4 py-3 text-sm text-purple-300">${g.creditos_acumulados.toLocaleString()} Cr</td>
+                    <td class="px-4 py-3 text-sm font-bold text-green-400">$${g.premio_usd.toFixed(2)}</td>
+                </tr>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+    
+    async function cerrarPeriodo(periodo, btnId) {
+        const btn = document.getElementById(btnId);
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        btn.disabled = true;
+        try {
+            let url = '';
+            if (periodo === 'semanal') url = '/agency/api/leaderboard/cerrar-semanal';
+            else if (periodo === 'quincenal') url = '/agency/api/leaderboard/cerrar-quincenal';
+            else url = '/agency/api/leaderboard/cerrar-mensual';
+            const res = await fetch(url, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                let mensaje = `✅ Período cerrado\n\n`;
+                for (const p of data.premios_registrados) {
+                    mensaje += `${p.puesto}° lugar: ${p.modelo} - $${p.premio}\n`;
+                }
+                mensaje += `\n💰 Total gastado: $${data.total_gastado.toFixed(2)}`;
+                alert(mensaje);
+                cargarTodosLosRankings();
+            } else {
+                showToast('❌ Error al cerrar el período', 'error');
+            }
+        } catch(e) {
+            showToast('Error de conexión', 'error');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+    
+    async function cargarTodosLosRankings() {
+        await cargarRankingSemanal();
+        await cargarRankingQuincenal();
+        await cargarRankingMensual();
+        await cargarHistorialPremios();
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        initCharts(); calculateCommission(); updateCurrentTime(); setInterval(updateCurrentTime, 1000);
+        initSidebar(); initFilters(); setInterval(actualizarDatos, 30000);
+        cargarConfiguracionPremios();
+        
+        document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+            item.addEventListener('click', (e) => { e.preventDefault(); switchTab(item.getAttribute('data-tab')); });
+        });
+        
+        document.getElementById('btnCerrarSemanal')?.addEventListener('click', () => cerrarPeriodo('semanal', 'btnCerrarSemanal'));
+        document.getElementById('btnCerrarQuincenal')?.addEventListener('click', () => cerrarPeriodo('quincenal', 'btnCerrarQuincenal'));
+        document.getElementById('btnCerrarMensual')?.addEventListener('click', () => cerrarPeriodo('mensual', 'btnCerrarMensual'));
+        
+        // Leaderboard buttons
+        document.getElementById('leaderboardBtnHoy')?.addEventListener('click', () => {
+            leaderboardPeriodo = 'hoy';
+            document.getElementById('leaderboardBtnHoy').className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600 text-white';
+            document.getElementById('leaderboardBtnSemana').className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400';
+            document.getElementById('leaderboardBtnMes').className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400';
+            cargarLeaderboard();
+        });
+        document.getElementById('leaderboardBtnSemana')?.addEventListener('click', () => {
+            leaderboardPeriodo = 'semana';
+            document.getElementById('leaderboardBtnHoy').className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400';
+            document.getElementById('leaderboardBtnSemana').className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600 text-white';
+            document.getElementById('leaderboardBtnMes').className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400';
+            cargarLeaderboard();
+        });
+        document.getElementById('leaderboardBtnMes')?.addEventListener('click', () => {
+            leaderboardPeriodo = 'mes';
+            document.getElementById('leaderboardBtnHoy').className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400';
+            document.getElementById('leaderboardBtnSemana').className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400';
+            document.getElementById('leaderboardBtnMes').className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-600 text-white';
+            cargarLeaderboard();
+        });
+        
+        cargarLeaderboard();
+    });
+</script>
+</body>
+</html>

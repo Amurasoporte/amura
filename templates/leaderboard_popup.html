@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard en Vivo - Amura Agency</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: system-ui, -apple-system, sans-serif; }
+        body { background: #030712; }
+        .card-ranking { transition: all 0.2s ease; }
+        .card-ranking:hover { transform: translateY(-2px); }
+        .gradient-text { background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .puesto-1 { background: linear-gradient(135deg, rgba(234,179,8,0.15), rgba(234,179,8,0.05)); border: 1px solid rgba(234,179,8,0.3); }
+        .puesto-2 { background: linear-gradient(135deg, rgba(156,163,175,0.15), rgba(156,163,175,0.05)); border: 1px solid rgba(156,163,175,0.3); }
+        .puesto-3 { background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(249,115,22,0.05)); border: 1px solid rgba(249,115,22,0.3); }
+    </style>
+</head>
+<body class="text-white">
+    <div class="min-h-screen p-6">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <div>
+                <h1 class="text-2xl font-bold gradient-text">🏆 Leaderboard en Vivo</h1>
+                <p class="text-sm text-gray-400" id="fechaInfo">Cargando...</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex bg-gray-800 rounded-lg p-1">
+                    <button id="btnHoy" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-purple-600 text-white">Hoy</button>
+                    <button id="btnSemana" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white">Semana</button>
+                    <button id="btnMes" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-400 hover:text-white">Mes</button>
+                </div>
+                <button id="btnRefrescar" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+            <div class="puesto-3 rounded-xl p-5 text-center card-ranking">
+                <div class="text-5xl mb-2">🥉</div>
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3" id="top3Foto3">?</div>
+                <p class="text-lg font-bold text-white" id="top3Nombre3">Cargando...</p>
+                <p class="text-2xl font-bold text-purple-300 mt-1" id="top3Creditos3">0 Cr</p>
+                <p class="text-sm text-green-400" id="top3Usd3">$0</p>
+            </div>
+            <div class="puesto-1 rounded-xl p-5 text-center card-ranking scale-105">
+                <div class="text-5xl mb-2">🥇</div>
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3" id="top3Foto1">?</div>
+                <p class="text-lg font-bold text-white" id="top3Nombre1">Cargando...</p>
+                <p class="text-2xl font-bold text-yellow-400 mt-1" id="top3Creditos1">0 Cr</p>
+                <p class="text-sm text-green-400" id="top3Usd1">$0</p>
+            </div>
+            <div class="puesto-2 rounded-xl p-5 text-center card-ranking">
+                <div class="text-5xl mb-2">🥈</div>
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3" id="top3Foto2">?</div>
+                <p class="text-lg font-bold text-white" id="top3Nombre2">Cargando...</p>
+                <p class="text-2xl font-bold text-gray-300 mt-1" id="top3Creditos2">0 Cr</p>
+                <p class="text-sm text-green-400" id="top3Usd2">$0</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-800/50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs text-gray-400">#</th>
+                            <th class="px-4 py-3 text-left text-xs text-gray-400">Modelo</th>
+                            <th class="px-4 py-3 text-left text-xs text-gray-400">Créditos</th>
+                            <th class="px-4 py-3 text-left text-xs text-gray-400">USD</th>
+                            <th class="px-4 py-3 text-left text-xs text-gray-400">Rendimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center text-xs text-gray-500">
+            <p>Actualización automática cada 30 segundos | Última actualización: <span id="ultimaActualizacion">--:--:--</span></p>
+        </div>
+    </div>
+
+    <script>
+        let periodoActual = 'hoy';
+        let intervalRefresco = null;
+
+        function obtenerFechaInicioTexto(data) {
+            if (periodoActual === 'hoy') return 'desde las 00:00 (hoy)';
+            if (data.fecha_inicio) return `desde ${data.fecha_inicio.split(' ')[0]}`;
+            return '';
+        }
+
+        function actualizarFechaInfo(data) {
+            const fechaInfo = document.getElementById('fechaInfo');
+            if (periodoActual === 'hoy') fechaInfo.innerHTML = '📅 Ranking de hoy (desde las 00:00)';
+            else if (periodoActual === 'semana') fechaInfo.innerHTML = `📅 Ranking de la semana ${obtenerFechaInicioTexto(data)}`;
+            else fechaInfo.innerHTML = `📅 Ranking del mes ${obtenerFechaInicioTexto(data)}`;
+        }
+
+        function actualizarBotones() {
+            const btnHoy = document.getElementById('btnHoy');
+            const btnSemana = document.getElementById('btnSemana');
+            const btnMes = document.getElementById('btnMes');
+            btnHoy.className = 'px-4 py-1.5 rounded-lg text-sm font-medium transition-all ' + (periodoActual === 'hoy' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white');
+            btnSemana.className = 'px-4 py-1.5 rounded-lg text-sm font-medium transition-all ' + (periodoActual === 'semana' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white');
+            btnMes.className = 'px-4 py-1.5 rounded-lg text-sm font-medium transition-all ' + (periodoActual === 'mes' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white');
+        }
+
+        async function cargarLeaderboard() {
+            try {
+                let url = '';
+                if (periodoActual === 'hoy') url = '/agency/api/leaderboard/hoy';
+                else if (periodoActual === 'semana') url = '/agency/api/leaderboard/semanal';
+                else url = '/agency/api/leaderboard/mensual';
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                // Procesar ranking: agregar puesto, usd, y limitar a top 10
+                const ranking = (data.ranking || []).slice(0, 10).map((item, idx) => ({
+                    ...item,
+                    puesto: idx + 1,
+                    usd: item.creditos * 0.10
+                }));
+
+                actualizarFechaInfo(data);
+
+                // Top 3
+                const top3 = ranking.slice(0, 3);
+                const top3Elements = [
+                    { idx: 1, nameId: 'top3Nombre1', creditosId: 'top3Creditos1', usdId: 'top3Usd1', fotoId: 'top3Foto1' },
+                    { idx: 2, nameId: 'top3Nombre2', creditosId: 'top3Creditos2', usdId: 'top3Usd2', fotoId: 'top3Foto2' },
+                    { idx: 3, nameId: 'top3Nombre3', creditosId: 'top3Creditos3', usdId: 'top3Usd3', fotoId: 'top3Foto3' }
+                ];
+
+                top3Elements.forEach((elem, i) => {
+                    const model = top3[i];
+                    if (model) {
+                        document.getElementById(elem.nameId).textContent = model.nombre;
+                        document.getElementById(elem.creditosId).textContent = model.creditos.toLocaleString() + ' Cr';
+                        document.getElementById(elem.usdId).textContent = '$' + model.usd.toLocaleString();
+                        document.getElementById(elem.fotoId).innerHTML = model.nombre.charAt(0).toUpperCase();
+                    } else {
+                        document.getElementById(elem.nameId).textContent = '---';
+                        document.getElementById(elem.creditosId).textContent = '0 Cr';
+                        document.getElementById(elem.usdId).textContent = '$0';
+                        document.getElementById(elem.fotoId).innerHTML = '?';
+                    }
+                });
+
+                const tbody = document.getElementById('rankingTableBody');
+                if (ranking.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">No hay datos disponibles</td></tr>';
+                } else {
+                    tbody.innerHTML = ranking.map(item => {
+                        const barraWidth = (item.creditos / (ranking[0]?.creditos || 1)) * 100;
+                        let puestoIcon = item.puesto === 1 ? '🥇' : item.puesto === 2 ? '🥈' : item.puesto === 3 ? '🥉' : `${item.puesto}°`;
+                        return `<tr class="border-b border-gray-800/50 hover:bg-gray-800/20">
+                            <td class="px-4 py-3"><span class="text-sm font-bold ${item.puesto === 1 ? 'text-yellow-400' : item.puesto === 2 ? 'text-gray-300' : item.puesto === 3 ? 'text-orange-400' : 'text-gray-500'}">${puestoIcon}</span></td>
+                            <td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">${item.nombre.charAt(0).toUpperCase()}</div><span class="text-sm text-white">${item.nombre}</span></div></td>
+                            <td class="px-4 py-3 text-sm font-bold text-purple-300">${item.creditos.toLocaleString()} Cr</td>
+                            <td class="px-4 py-3 text-sm text-green-400">$${item.usd.toLocaleString()}</td>
+                            <td class="px-4 py-3"><div class="w-full bg-gray-800 rounded-full h-1.5"><div class="h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" style="width: ${barraWidth}%"></div></div></td>
+                        </tr>`;
+                    }).join('');
+                }
+                document.getElementById('ultimaActualizacion').textContent = new Date().toLocaleTimeString('es-ES');
+            } catch(e) {
+                console.error(e);
+                document.getElementById('rankingTableBody').innerHTML = '<tr><td colspan="5" class="text-center text-red-400 py-8">Error al cargar datos</td></tr>';
+            }
+        }
+
+        function iniciarAutoRefresco() {
+            if (intervalRefresco) clearInterval(intervalRefresco);
+            intervalRefresco = setInterval(cargarLeaderboard, 30000);
+        }
+
+        document.getElementById('btnHoy').addEventListener('click', () => { periodoActual = 'hoy'; actualizarBotones(); cargarLeaderboard(); });
+        document.getElementById('btnSemana').addEventListener('click', () => { periodoActual = 'semana'; actualizarBotones(); cargarLeaderboard(); });
+        document.getElementById('btnMes').addEventListener('click', () => { periodoActual = 'mes'; actualizarBotones(); cargarLeaderboard(); });
+        document.getElementById('btnRefrescar').addEventListener('click', () => {
+            const btn = document.getElementById('btnRefrescar');
+            btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Actualizando...';
+            cargarLeaderboard().finally(() => btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar');
+        });
+
+        cargarLeaderboard();
+        iniciarAutoRefresco();
+    </script>
+</body>
+</html>

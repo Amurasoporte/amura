@@ -2,412 +2,933 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MASTER CONSOLE | Amura Supervisor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SuperAdmin Panel — Amura</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --rose: #ec4899;
-            --rose-dark: #be185d;
-            --primary: #6366f1;
-            --bg-light: #f5f5f7;
-            --surface: #ffffff;
-            --elevated: #f8f9fa;
-            --text: #1e1e2e;
-            --text-secondary: #6c757d;
-            --border: #eaeef2;
-            --shadow: 0 2px 8px rgba(0,0,0,0.04);
-            --delete: #ef4444;
-            --link: #38bdf8;
-            --manage: #4b5563;
-        }
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: var(--bg-light);
-            color: var(--text);
-            min-height: 100vh;
-        }
-        .navbar {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 16px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: var(--shadow);
-        }
-        .logo {
-            font-size: 26px;
-            font-weight: 800;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .logo-heart {
-            background: linear-gradient(135deg, #f5a3c7, #ec4899);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 28px;
-        }
-        .logo-text {
-            background: linear-gradient(135deg, #f5a3c7, #ec4899);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 800;
-        }
-        .nav-links {
-            display: flex;
-            gap: 1rem;
-        }
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 40px;
-            transition: 0.2s;
-        }
-        .nav-links a:hover {
-            background: var(--elevated);
-            color: var(--rose);
-        }
-        .btn-logout {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            padding: 8px 20px;
-            border-radius: 40px;
-            border: 1px solid var(--border);
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--elevated);
-        }
-        .btn-logout:hover {
-            background: var(--surface);
-            border-color: var(--rose);
-            color: var(--rose);
-        }
-        .container {
-            max-width: 1300px;
-            margin: auto;
-            padding: 40px;
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 40px;
-        }
-        @media (max-width: 1024px) {
-            .container { grid-template-columns: 1fr; }
-        }
-        .agencias-list {
-            background: var(--surface);
-            padding: 35px;
-            border-radius: 35px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
-        }
-        .agencias-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 20px;
-            margin-bottom: 20px;
-        }
-        .agencias-header h2 {
-            margin: 0;
-            font-weight: 900;
-            font-size: 20px;
-            color: var(--text);
-        }
-        .total-badge {
-            background: var(--elevated);
-            color: var(--text-secondary);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .agencia-item {
-            background: var(--elevated);
-            padding: 25px;
-            border-radius: 25px;
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid var(--border);
-            transition: 0.3s;
-        }
-        .agencia-item:hover {
-            transform: translateX(5px);
-            border-color: var(--rose);
-            background: var(--surface);
-        }
-        .agencia-info h3 {
-            margin: 0;
-            font-size: 20px;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .agencia-info p {
-            margin: 5px 0 0;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        .comision-badge {
-            background: rgba(236,72,153,0.1);
-            color: var(--rose);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-        .actions {
-            display: flex;
-            gap: 10px;
-        }
-        .btn {
-            padding: 12px 18px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 11px;
-            text-transform: uppercase;
-            cursor: pointer;
-            border: none;
-            text-decoration: none;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-manage { background: var(--manage); color: white; }
-        .btn-link { background: var(--link); color: white; }
-        .btn-delete { background: var(--delete); color: white; }
-        .btn:hover { opacity: 0.85; transform: translateY(-2px); }
-        .side-panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 32px;
-            padding: 32px;
-            box-shadow: var(--shadow);
-        }
-        .side-panel h3 {
-            margin: 0 0 24px;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        label {
-            display: block;
-            margin-top: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-        }
-        input, select {
-            width: 100%;
-            padding: 14px 16px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            margin-top: 8px;
-            box-sizing: border-box;
-            font-weight: 500;
-            background: var(--elevated);
-            outline: none;
-            font-size: 14px;
-            color: var(--text);
-        }
-        input:focus, select:focus {
-            border-color: var(--rose);
-            box-shadow: 0 0 0 3px rgba(236,72,153,0.1);
-        }
-        .btn-save {
-            width: 100%;
-            background: var(--rose);
-            color: white;
-            padding: 14px;
-            border-radius: 40px;
-            font-weight: 700;
-            margin-top: 28px;
-            cursor: pointer;
-            border: none;
-            transition: 0.2s;
-            font-size: 14px;
-        }
-        .btn-save:hover {
-            background: var(--rose-dark);
-            transform: translateY(-2px);
-        }
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-            color: var(--text-secondary);
-        }
-        .empty-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
+        * { box-sizing: border-box; }
+        body { background: #030712; font-family: system-ui, -apple-system, sans-serif; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item.active { background: linear-gradient(90deg, rgba(168,85,247,0.2), rgba(236,72,153,0.1)); border-left: 3px solid #a855f7; color: #d8b4fe; }
+        .nav-item.active svg { color: #c084fc; }
+        .card { transition: all 0.2s ease; }
+        .card:hover { border-color: #4b5563; }
+        .gradient-text { background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .toast { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.open { display: flex; }
+        .modal-content { background: #1a1a2e; border-radius: 24px; width: 680px; max-width: 95%; max-height: 90vh; overflow-y: auto; padding: 24px; border: 1px solid #2d2b4e; }
+        input, select, textarea { width: 100%; padding: 10px 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #2d2b4e; background: #0f0f1a; color: white; font-size: 14px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #a855f7; }
+        label { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-active { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+        .badge-inactive { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+        .btn { padding: 8px 18px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(135deg, #a855f7, #ec4899); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(168,85,247,0.3); }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-secondary { background: #1f2937; color: #94a3b8; border: 1px solid #2d2b4e; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .stat-card { background: #111022; border: 1px solid #2d2b4e; border-radius: 16px; padding: 20px; }
+        .stat-value { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #a855f7, #ec4899); background-clip: text; -webkit-text-fill-color: transparent; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #2d2b4e; }
+        th { color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        td { color: #e2e8f0; font-size: 13px; }
+        .action-btn { background: transparent; border: none; color: #64748b; cursor: pointer; padding: 6px; border-radius: 8px; }
+        .action-btn:hover { color: #a855f7; background: rgba(168,85,247,0.1); }
+        .action-btn.danger:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .photo-preview { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #a855f7, #ec4899); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; }
+        .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .filter-bar { background: #111827; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .pagination { display: flex; gap: 8px; justify-content: center; margin-top: 20px; }
+        .page-btn { padding: 6px 12px; border-radius: 8px; background: #1f2937; color: #94a3b8; cursor: pointer; }
+        .page-btn.active { background: #a855f7; color: white; }
+        .page-btn:hover:not(.active) { background: #374151; }
+        .sub-tab { display: inline-flex; gap: 4px; background: #111827; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+        .sub-tab-btn { padding: 8px 20px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 500; }
+        .sub-tab-btn.active { background: #a855f7; color: white; }
+        .sub-tab-content { display: none; }
+        .sub-tab-content.active { display: block; }
+        .detalles-json { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; font-size: 11px; font-family: monospace; }
+        .detalles-json:hover { white-space: normal; word-break: break-all; background: #1f2937; }
+        .config-card { background: #111827; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .comision-input { width: 80px; text-align: center; }
     </style>
 </head>
-<body>
-    <nav class="navbar">
-        <div class="logo">
-            <span class="logo-heart">❤️</span>
-            <span class="logo-text">Amura</span>
-        </div>
-        <div class="nav-links">
-            <a href="/master">Agencias</a>
-            <a href="/superadmin/config">Configuración (Rates)</a>
-            <a href="/monitor_chat">Monitor de Chat</a>
-            <a href="/reportes">Reportes</a>
-        </div>
-        <a href="/logout" class="btn-logout">
-            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-        </a>
-    </nav>
+<body class="bg-gray-950 text-white">
 
-    <div class="container">
-        <div class="agencias-list">
-            <div class="agencias-header">
-                <h2><i class="fas fa-building" style="color: var(--rose);"></i> AGENCIAS</h2>
-                <span class="total-badge">{{ agencias|length }} ACTIVAS</span>
-            </div>
-
-            {% for a in agencias %}
-            <div class="agencia-item">
-                <div class="agencia-info">
-                    <h3>
-                        {{ a.nombre }}
-                        <span class="comision-badge">{{ a.comision }}% comisión</span>
-                    </h3>
-                    <p><i class="fas fa-envelope"></i> {{ a.correo }} • ID: {{ a.id }}</p>
-                    <p><i class="fas fa-map-marker-alt"></i> {{ a.pais }}</p>
-                    <p style="margin-top: 8px; font-size: 11px;">
-                        <i class="fas fa-users"></i> {{ a.perfiles|length }} modelos
-                    </p>
+<div class="flex h-screen overflow-hidden">
+    
+    <!-- SIDEBAR -->
+    <aside class="fixed lg:relative z-50 h-full flex flex-col bg-gray-900 border-r border-gray-800 transition-all duration-300 w-64 -translate-x-full lg:translate-x-0" id="sidebar">
+        <div class="flex items-center justify-between p-4 border-b border-gray-800">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
                 </div>
-                <div class="actions">
-                    <a href="/gestionar/{{ a.id }}" class="btn btn-manage">
-                        <i class="fas fa-cog"></i> Gestionar
-                    </a>
-                    <button onclick="copiarLink('{{ a.id }}')" class="btn btn-link">
-                        <i class="fas fa-link"></i> Link
-                    </button>
-                    <button onclick="eliminarAgencia('{{ a.id }}')" class="btn btn-delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                <div><p class="text-sm font-bold gradient-text">Amura Admin</p><p class="text-xs text-gray-500">SuperAdmin Panel</p></div>
+            </div>
+            <button class="hidden lg:flex text-gray-400 hover:text-white" id="toggleSidebar"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white active" data-tab="dashboard">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                <span class="text-sm font-medium">Dashboard</span>
+            </a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="agencies">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span class="text-sm font-medium">Agencias</span>
+                <span class="ml-auto bg-purple-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" id="agCount">0</span>
+            </a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="models">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span class="text-sm font-medium">Modelos</span>
+                <span class="ml-auto bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" id="modelCount">0</span>
+            </a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="admins">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span class="text-sm font-medium">Administradores</span>
+            </a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="config">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span class="text-sm font-medium">Configuración</span>
+            </a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="regalos">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+                <span class="text-sm font-medium">Regalos</span>
+            </a>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white" data-tab="audit">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <span class="text-sm font-medium">Auditoría</span>
+            </a>
+        </nav>
+        
+        <div class="p-3 border-t border-gray-800">
+            <div class="flex items-center gap-3 px-2 py-2 rounded-lg bg-gray-800/50">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="12" r="4"/></svg>
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-xs font-semibold text-white truncate" id="sidebarAdminNombre">Cargando...</p>
+                    <p class="text-xs text-gray-500 truncate" id="sidebarAdminEmail">cargando@amura.com</p>
                 </div>
             </div>
-            {% else %}
-            <div class="empty-state">
-                <div class="empty-icon">🏢</div>
-                <p>No hay agencias registradas todavía</p>
-                <p style="font-size: 13px; margin-top: 10px;">Completa el formulario para crear tu primera agencia</p>
-            </div>
-            {% endfor %}
         </div>
-
-        <div class="side-panel">
-            <h3>
-                <i class="fas fa-plus-circle" style="color: var(--rose);"></i>
-                Crear Agencia
-            </h3>
-            <label>Nombre de la Agencia</label>
-            <input type="text" id="nom-agencia" placeholder="Ej: Agencia Caribe" autocomplete="off">
-            <label>Correo de Acceso</label>
-            <input type="email" id="cor-agencia" placeholder="correo@agencia.com" autocomplete="off">
-            <label>Contraseña Maestra</label>
-            <input type="text" id="pass-agencia" placeholder="Clave para el dueño" autocomplete="off">
-            <label>Comisión de la Agencia (%)</label>
-            <input type="number" id="com-agencia" value="50" min="0" max="100">
-            <label>País</label>
-            <input type="text" id="pais-agencia" placeholder="País de la agencia">
-            <button onclick="registrar()" class="btn-save">
-                <i class="fas fa-save"></i> CREAR AGENCIA
-            </button>
-            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; text-align: center; color: var(--text-secondary);">
-                <i class="fas fa-shield-alt"></i> Los dueños de agencias podrán gestionar sus modelos
+    </aside>
+    
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 lg:px-6">
+            <div class="flex items-center gap-3">
+                <button class="lg:hidden text-gray-400 hover:text-white" id="mobileMenuBtn">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                </button>
+                <div><h1 class="text-sm font-semibold text-white" id="pageTitle">Dashboard</h1><p class="text-xs text-gray-500">Panel de Control</p></div>
             </div>
-        </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 rounded-full px-3 py-1">
+                    <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                    <span class="text-xs text-green-400 font-medium">Sistema Online</span>
+                </div>
+                <button onclick="logout()" class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 rounded-full px-3 py-1">
+                    <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                    <span class="text-xs text-gray-300">Salir</span>
+                </button>
+            </div>
+        </header>
+        
+        <main class="flex-1 overflow-y-auto bg-gray-950 p-4 lg:p-6">
+            
+            <!-- DASHBOARD -->
+            <div id="tab-dashboard" class="tab-content active">
+                <div class="space-y-6">
+                    <div><h2 class="text-xl font-bold text-white">Panel General</h2><p class="text-sm text-gray-400">Resumen financiero de la plataforma</p></div>
+                    
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card">
+                            <div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-400">Total Agencias</span><div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center"><svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div></div>
+                            <p class="text-2xl font-bold text-white" id="statAgencies">0</p>
+                        </div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card">
+                            <div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-400">Total Modelos</span><div class="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center"><svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div>
+                            <p class="text-2xl font-bold text-white" id="statModels">0</p>
+                        </div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card">
+                            <div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-400">Ganancias Plataforma</span><div class="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center"><svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div>
+                            <p class="text-2xl font-bold text-yellow-400" id="statPlataforma">$0</p>
+                        </div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card">
+                            <div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-400">Total Ganancias</span><div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center"><svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div></div>
+                            <p class="text-2xl font-bold text-green-400" id="statEarnings">$0</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Gráficas financieras -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">🏆 Top Agencias por Ingresos</h3></div>
+                            <div id="topAgenciesList" class="space-y-3"></div>
+                        </div>
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">📊 Distribución de Ganancias</h3></div>
+                            <canvas id="distributionChart" height="180" style="max-height: 200px; width: 100%;"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Actividad Reciente -->
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">⚡ Actividad Reciente</h3></div>
+                        <div id="activityList" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AGENCIAS -->
+            <div id="tab-agencies" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex-between"><div><h2 class="text-xl font-bold text-white">Agencias</h2><p class="text-sm text-gray-400">Gestión de agencias asociadas</p></div><button class="btn btn-primary" onclick="openModal('agencyModal')"><i class="fas fa-plus"></i> Nueva Agencia</button></div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>País</th><th>Modelos</th><th>Comisión Plataforma</th><th>Comisión Agencia</th><th>Ganancia Plataforma</th><th>Acciones</th></tr></thead>
+                                <tbody id="agenciesBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- MODELOS -->
+            <div id="tab-models" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex-between"><div><h2 class="text-xl font-bold text-white">Modelos</h2><p class="text-sm text-gray-400">Gestión de modelos registradas</p></div><button class="btn btn-primary" onclick="openModal('modelModal')"><i class="fas fa-plus"></i> Nueva Modelo</button></div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Agencia</th><th>Tier</th><th>Estado</th><th>Ganancia Total</th><th>Acciones</th></tr></thead>
+                                <tbody id="modelsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ADMINISTRADORES -->
+            <div id="tab-admins" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex-between"><div><h2 class="text-xl font-bold text-white">Administradores</h2><p class="text-sm text-gray-400">Gestión de admins del sistema</p></div><button class="btn btn-primary" onclick="openModal('adminModal')"><i class="fas fa-plus"></i> Nuevo Admin</button></div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Acciones</th></tr></thead>
+                                <tbody id="adminsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CONFIGURACIÓN GLOBAL -->
+            <div id="tab-config" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex-between"><div><h2 class="text-xl font-bold text-white">Configuración Global</h2><p class="text-sm text-gray-400">Parámetros financieros de la plataforma</p></div><button class="btn btn-primary" onclick="guardarConfigGlobal()"><i class="fas fa-save"></i> Guardar Cambios</button></div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <!-- Tarjeta: Valor del Crédito -->
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                            <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2"><i class="fas fa-dollar-sign text-green-400"></i> Valor del Crédito</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-xs text-gray-400 uppercase">1 CRÉDITO =</label>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-lg font-bold text-white">$</span>
+                                        <input type="number" id="configValorCredito" step="0.01" class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Define cuánto vale 1 crédito en USD</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tarjeta: Comisiones Base -->
+                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                            <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2"><i class="fas fa-chart-pie text-purple-400"></i> Comisiones Base</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-xs text-gray-400 uppercase">Comisión Plataforma (Amura)</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="configComisionPlataforma" step="1" class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                                        <span class="text-white">%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-400 uppercase">Comisión Agencia (por defecto)</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="configComisionAgencia" step="1" class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                                        <span class="text-white">%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-400 uppercase">Comisión Modelo (por defecto)</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="configComisionModelo" step="1" class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                                        <span class="text-white">%</span>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-800 rounded-lg p-3 mt-2">
+                                    <p class="text-xs text-gray-400">Suma total:</p>
+                                    <p class="text-sm font-bold text-white" id="sumaComisionesPreview">0%</p>
+                                    <p class="text-xs text-gray-500 mt-1">Debe sumar 100%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información adicional -->
+                    <div class="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-info-circle text-purple-400 mt-0.5"></i>
+                            <div>
+                                <p class="text-sm font-semibold text-purple-300">¿Cómo funciona la distribución?</p>
+                                <p class="text-xs text-gray-400 mt-1">
+                                    <strong>Ejemplo:</strong> Un cliente gasta 100 créditos → Valor crédito = $0.10 → Ingreso total = $10.00<br>
+                                    • <strong>Plataforma (Amura):</strong> Se queda con su porcentaje<br>
+                                    • <strong>Agencia:</strong> Recibe su porcentaje (puede negociarse individualmente)<br>
+                                    • <strong>Modelo:</strong> Recibe su porcentaje (pagado por la agencia)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- REGALOS (vista simple con enlace) -->
+            <div id="tab-regalos" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex-between"><div><h2 class="text-xl font-bold text-white">Configuración de Regalos</h2><p class="text-sm text-gray-400">Define los regalos que los clientes pueden enviar</p></div><button class="btn btn-primary" onclick="window.location.href='/master/regalos'"><i class="fas fa-external-link-alt"></i> Abrir Panel Completo</button></div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
+                        <i class="fas fa-gift text-5xl text-purple-400 mb-3"></i>
+                        <p class="text-gray-300">El panel completo de configuración de regalos se encuentra en una página separada</p>
+                        <button onclick="window.location.href='/master/regalos'" class="mt-4 btn-primary">Ir a Configuración de Regalos →</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AUDITORÍA -->
+            <div id="tab-audit" class="tab-content">
+                <div class="space-y-5">
+                    <div class="flex-between"><div><h2 class="text-xl font-bold text-white">Auditoría</h2><p class="text-sm text-gray-400">Registro de acciones de administradores</p></div><button class="btn btn-success" onclick="exportLogs()"><i class="fas fa-download"></i> Exportar CSV</button></div>
+                    
+                    <div class="filter-bar">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div><label>Fecha Desde</label><input type="date" id="logFechaDesde" class="w-full"></div>
+                            <div><label>Fecha Hasta</label><input type="date" id="logFechaHasta" class="w-full"></div>
+                            <div><label>Administrador</label><select id="logAdminId" class="w-full"><option value="todos">Todos</option></select></div>
+                            <div><label>Acción</label><select id="logAccion" class="w-full"><option value="todas">Todas</option></select></div>
+                        </div>
+                        <div class="flex justify-end mt-4"><button onclick="cargarLogs(1)" class="btn-primary"><i class="fas fa-search"></i> Filtrar</button><button onclick="limpiarFiltrosLogs()" class="btn-secondary ml-2"><i class="fas fa-undo"></i> Limpiar</button></div>
+                    </div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead><tr><th>Fecha/Hora</th><th>Administrador</th><th>Email</th><th>Acción</th><th>Detalles</th><th>IP</th></tr></thead>
+                                <tbody id="logsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="logsPagination" class="pagination"></div>
+                </div>
+            </div>
+            
+        </main>
     </div>
+</div>
 
-    <script>
-        async function registrar() {
-            const nombre = document.getElementById('nom-agencia').value.trim();
-            const correo = document.getElementById('cor-agencia').value.trim();
-            const password = document.getElementById('pass-agencia').value;
-            const comision = document.getElementById('com-agencia').value;
-            const pais = document.getElementById('pais-agencia').value;
-            if(!nombre || !correo || !password) {
-                alert("❌ Completa todos los campos obligatorios");
-                return;
+<!-- MODALES -->
+<div id="agencyModal" class="modal">
+    <div class="modal-content">
+        <div class="flex-between mb-4"><h3 class="text-xl font-bold gradient-text">🏢 Crear Nueva Agencia</h3><button onclick="closeModal('agencyModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
+        <div class="grid-2">
+            <div><label>Nombre *</label><input type="text" id="agencyName" placeholder="Ej: Roses Agency"></div>
+            <div><label>Email *</label><input type="email" id="agencyEmail" placeholder="agencia@email.com"></div>
+            <div><label>País</label><select id="agencyCountry"><option>Colombia</option><option>Venezuela</option><option>México</option></select></div>
+            <div><label>🔐 Contraseña</label><input type="text" id="agencyPassword" value="Agency2024!"></div>
+        </div>
+        <div class="mt-4 p-3 bg-gray-800/50 rounded-xl">
+            <h4 class="text-sm font-semibold text-white mb-3">📊 Distribución de Comisiones (%)</h4>
+            <div class="grid-2">
+                <div><label>Comisión Plataforma</label><input type="number" id="agencyComisionPlataforma" value="60" step="1" min="0" max="100"></div>
+                <div><label>Comisión Agencia</label><input type="number" id="agencyComisionAgencia" value="25" step="1" min="0" max="100"></div>
+                <div><label>Comisión Modelo</label><input type="number" id="agencyComisionModelo" value="15" step="1" min="0" max="100"></div>
+            </div>
+            <p class="text-xs text-gray-500 mt-2" id="previewSumaAgencia">Suma: 100% ✓</p>
+        </div>
+        <div class="flex gap-3 mt-5"><button onclick="closeModal('agencyModal')" class="btn-secondary flex-1">Cancelar</button><button onclick="createAgency()" class="btn-primary flex-1">Crear Agencia</button></div>
+    </div>
+</div>
+
+<div id="modelModal" class="modal">
+    <div class="modal-content">
+        <div class="flex-between mb-4"><h3 class="text-xl font-bold gradient-text">👩 Crear Nueva Modelo</h3><button onclick="closeModal('modelModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
+        <div class="grid-2">
+            <div><label>Nombre / Alias *</label><input type="text" id="modelName" placeholder="Ej: Valeria Moon"></div>
+            <div><label>Email *</label><input type="email" id="modelEmail" placeholder="modelo@email.com"></div>
+            <div><label>Agencia (ID público) *</label><input type="text" id="modelAgency" placeholder="Ej: A1001"></div>
+            <div><label>País</label><select id="modelCountry"><option>Colombia</option><option>Venezuela</option><option>México</option></select></div>
+            <div><label>Tier</label><select id="modelTier"><option value="Standard">Standard</option><option value="Premium">Premium</option><option value="VIP">VIP</option></select></div>
+            <div><label>🔐 Contraseña</label><input type="text" id="modelPassword" value="Model2024!"></div>
+        </div>
+        <div class="mt-4 p-3 bg-gray-800/50 rounded-xl">
+            <label>📸 Foto de perfil</label>
+            <div class="flex items-center gap-4 mt-2">
+                <div id="photoPreview" onclick="document.getElementById('photoInput').click()" class="photo-preview"><i class="fas fa-camera text-white text-xl"></i></div>
+                <div><p class="text-sm text-gray-300">Haz clic para subir foto</p><p class="text-xs text-gray-500">JPG, PNG, GIF</p></div>
+                <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+            </div>
+        </div>
+        <div class="flex gap-3 mt-5"><button onclick="closeModal('modelModal')" class="btn-secondary flex-1">Cancelar</button><button onclick="createModel()" class="btn-primary flex-1">Crear</button></div>
+    </div>
+</div>
+
+<div id="adminModal" class="modal">
+    <div class="modal-content" style="width: 450px;">
+        <div class="flex-between mb-4"><h3 class="text-xl font-bold gradient-text">➕ Nuevo Administrador</h3><button onclick="closeModal('adminModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
+        <input type="text" id="adminName" placeholder="Nombre *">
+        <input type="email" id="adminEmail" placeholder="Email *">
+        <input type="password" id="adminPass" placeholder="Contraseña *">
+        <div class="flex gap-3 mt-5"><button onclick="closeModal('adminModal')" class="btn-secondary flex-1">Cancelar</button><button onclick="createAdmin()" class="btn-primary flex-1">Crear</button></div>
+    </div>
+</div>
+
+<div id="resetPassModal" class="modal">
+    <div class="modal-content" style="width: 400px;">
+        <div class="flex-between mb-4"><h3 class="text-xl font-bold gradient-text">🔐 Resetear Contraseña</h3><button onclick="closeModal('resetPassModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
+        <input type="hidden" id="resetAdminId">
+        <label>Nueva contraseña</label>
+        <input type="password" id="newAdminPass" placeholder="Nueva contraseña">
+        <div class="flex gap-3 mt-5"><button onclick="closeModal('resetPassModal')" class="btn-secondary flex-1">Cancelar</button><button onclick="confirmResetPass()" class="btn-warning flex-1">Resetear</button></div>
+    </div>
+</div>
+
+<div id="editAdminModal" class="modal">
+    <div class="modal-content" style="width: 450px;">
+        <div class="flex-between mb-4"><h3 class="text-xl font-bold gradient-text">✏️ Editar Administrador</h3><button onclick="closeModal('editAdminModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
+        <input type="hidden" id="editAdminId">
+        <label>Nombre</label><input type="text" id="editAdminNombre" placeholder="Nombre">
+        <label>Email</label><input type="email" id="editAdminEmail" placeholder="Email">
+        <div class="flex gap-3 mt-5"><button onclick="closeModal('editAdminModal')" class="btn-secondary flex-1">Cancelar</button><button onclick="confirmEditAdmin()" class="btn-primary flex-1">Guardar</button></div>
+    </div>
+</div>
+
+<div id="editAgencyModal" class="modal">
+    <div class="modal-content">
+        <div class="flex-between mb-4"><h3 class="text-xl font-bold gradient-text">✏️ Editar Agencia</h3><button onclick="closeModal('editAgencyModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
+        <input type="hidden" id="editAgencyId">
+        <div class="grid-2">
+            <div><label>Nombre</label><input type="text" id="editAgencyName"></div>
+            <div><label>Email</label><input type="email" id="editAgencyEmail"></div>
+            <div><label>País</label><input type="text" id="editAgencyCountry"></div>
+        </div>
+        <div class="mt-4 p-3 bg-gray-800/50 rounded-xl">
+            <h4 class="text-sm font-semibold text-white mb-3">📊 Comisiones</h4>
+            <div class="grid-2">
+                <div><label>Plataforma (%)</label><input type="number" id="editAgencyComisionPlataforma" step="1" min="0" max="100"></div>
+                <div><label>Agencia (%)</label><input type="number" id="editAgencyComisionAgencia" step="1" min="0" max="100"></div>
+                <div><label>Modelo (%)</label><input type="number" id="editAgencyComisionModelo" step="1" min="0" max="100"></div>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-5"><button onclick="closeModal('editAgencyModal')" class="btn-secondary flex-1">Cancelar</button><button onclick="confirmEditAgency()" class="btn-primary flex-1">Guardar</button></div>
+    </div>
+</div>
+
+<div id="toastContainer" class="fixed bottom-4 right-4 z-50"></div>
+
+<script>
+    let agencies = [];
+    let models = [];
+    let admins = [];
+    let selectedPhotoBase64 = null;
+    let currentLogsPage = 1;
+    let distributionChart = null;
+
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }).replace(/['"]/g, function(m) { if(m === "'") return '&#39;'; if(m === '"') return '&quot;'; return m; }); }
+
+    // ========== ADMIN INFO ==========
+    async function loadAdminInfo() {
+        try {
+            const res = await fetch('/api/superadmin/me');
+            if(res.ok) { const admin = await res.json(); document.getElementById('sidebarAdminNombre').textContent = admin.nombre; document.getElementById('sidebarAdminEmail').textContent = admin.email; }
+            else { document.getElementById('sidebarAdminNombre').textContent = 'Super Admin'; document.getElementById('sidebarAdminEmail').textContent = 'master@amura.com'; }
+        } catch(e) { document.getElementById('sidebarAdminNombre').textContent = 'Super Admin'; document.getElementById('sidebarAdminEmail').textContent = 'master@amura.com'; }
+    }
+
+    // ========== DATOS PRINCIPALES ==========
+    async function loadData() {
+        try {
+            const statsRes = await fetch('/api/superadmin/statistics');
+            const stats = await statsRes.json();
+            document.getElementById('statAgencies').textContent = stats.total_agencias || 0;
+            document.getElementById('statModels').textContent = stats.total_modelos || 0;
+            document.getElementById('statEarnings').textContent = '$' + (stats.ganancias_totales || 0).toLocaleString();
+            document.getElementById('statPlataforma').textContent = '$' + (stats.monto_plataforma || 0).toLocaleString();
+            document.getElementById('agCount').textContent = stats.total_agencias || 0;
+            document.getElementById('modelCount').textContent = stats.total_modelos || 0;
+
+            const agenciesRes = await fetch('/api/superadmin/agencies');
+            agencies = await agenciesRes.json();
+            renderAgencies();
+
+            const modelsRes = await fetch('/api/superadmin/models');
+            models = await modelsRes.json();
+            renderModels();
+
+            await loadAdmins();
+            await loadConfigGlobal();
+
+            const activityRes = await fetch('/api/superadmin/activities');
+            const activities = await activityRes.json();
+            renderActivities(activities);
+            
+            renderTopAgencies();
+            
+            // Actualizar gráfica de distribución
+            if(distributionChart) {
+                distributionChart.data.datasets[0].data = [stats.monto_plataforma || 0, stats.monto_agencia || 0, stats.monto_modelo || 0];
+                distributionChart.update();
             }
-            const btn = document.querySelector('.btn-save');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
-            btn.disabled = true;
-            try {
-                const res = await fetch('/api/crear_agencia', { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ nombre, correo, password, comision, pais })
-                });
-                const data = await res.json();
-                if(res.ok) {
-                    alert('✅ Agencia creada exitosamente');
-                    location.reload();
-                } else {
-                    alert('❌ ' + (data.msg || 'Error al crear agencia'));
-                }
-            } catch (error) {
-                alert('❌ Error de conexión');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+
+        } catch(e) { console.error(e); showToast('Error al cargar datos', 'error'); }
+    }
+
+    function renderAgencies() {
+        const tbody = document.getElementById('agenciesBody');
+        if(!tbody) return;
+        if(agencies.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500 py-8">No hay agencias registradas</td></tr>'; return; }
+        tbody.innerHTML = agencies.map(a => `
+            <tr>
+                <td class="font-mono">${a.public_id}</td>
+                <td>${escapeHtml(a.name)}</td>
+                <td class="text-gray-400">${escapeHtml(a.email)}</td>
+                <td>${a.country || '-'}</td>
+                <td>${a.models || 0}</td>
+                <td><span class="badge badge-active">${a.comision_plataforma || 60}%</span></td>
+                <td><span class="badge">${a.comision_agencia || 25}%</span></td>
+                <td class="text-green-400">$${(a.monto_plataforma || 0).toLocaleString()}</td>
+                <td>
+                    <button onclick="openEditAgencyModal('${a.public_id}')" class="action-btn"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteAgency('${a.public_id}')" class="action-btn danger"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderModels() {
+        const tbody = document.getElementById('modelsBody');
+        if(!tbody) return;
+        if(models.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500 py-8">No hay modelos registradas</td></tr>'; return; }
+        tbody.innerHTML = models.map(m => `
+            <tr>
+                <td class="font-mono">${m.public_id}</td>
+                <td>${escapeHtml(m.name)}</td>
+                <td class="text-gray-400">${escapeHtml(m.email)}</td>
+                <td>${escapeHtml(m.agency_name) || '-'}</td>
+                <td><span class="badge ${m.tier === 'VIP' ? 'badge-active' : m.tier === 'Premium' ? 'badge' : 'badge-inactive'}">${m.tier || 'Standard'}</span></td>
+                <td><span class="badge ${m.online ? 'badge-active' : 'badge-inactive'}">${m.online ? 'Online' : 'Offline'}</span></td>
+                <td class="text-green-400">$${(m.earnings || 0).toLocaleString()}</td>
+                <td><button onclick="deleteModel('${m.public_id}')" class="action-btn danger"><i class="fas fa-trash"></i></button></td>
+            </tr>
+        `).join('');
+    }
+
+    async function loadAdmins() {
+        const res = await fetch('/api/superadmin/admins');
+        admins = await res.json();
+        const tbody = document.getElementById('adminsBody');
+        if(tbody) {
+            tbody.innerHTML = admins.map(a => `
+                <tr><td class="font-mono">${a.id}</td><td>${escapeHtml(a.nombre)}</td><td class="text-gray-400">${escapeHtml(a.email)}</td>
+                <td><button onclick="openEditAdminModal(${a.id}, '${escapeHtml(a.nombre)}', '${escapeHtml(a.email)}')" class="action-btn"><i class="fas fa-edit"></i></button>
+                <button onclick="openResetPassModal(${a.id})" class="action-btn"><i class="fas fa-key"></i></button>
+                <button onclick="deleteAdmin(${a.id})" class="action-btn danger"><i class="fas fa-trash"></i></button></td></tr>
+            `).join('');
         }
+    }
 
-        async function eliminarAgencia(id) {
-            if(confirm("⚠️ ¿Eliminar esta agencia? Se eliminarán TODAS sus modelos permanentemente.")) {
-                try {
-                    const res = await fetch(`/api/eliminar_agencia/${id}`, { method: 'DELETE' });
-                    if(res.ok) {
-                        location.reload();
-                    } else {
-                        const data = await res.json();
-                        alert("Error: " + (data.msg || "No se pudo eliminar"));
-                    }
-                } catch(e) {
-                    alert("Error de conexión");
-                }
-            }
+    async function loadConfigGlobal() {
+        try {
+            const res = await fetch('/api/superadmin/config');
+            const config = await res.json();
+            document.getElementById('configValorCredito').value = config.valor_credito_usd || '0.10';
+            document.getElementById('configComisionPlataforma').value = config.comision_plataforma_base || '60';
+            document.getElementById('configComisionAgencia').value = config.comision_agencia_base || '25';
+            document.getElementById('configComisionModelo').value = config.comision_modelo_base || '15';
+            actualizarSumaComisiones();
+        } catch(e) { console.error(e); }
+    }
+
+    function actualizarSumaComisiones() {
+        const plataforma = parseInt(document.getElementById('configComisionPlataforma')?.value) || 0;
+        const agencia = parseInt(document.getElementById('configComisionAgencia')?.value) || 0;
+        const modelo = parseInt(document.getElementById('configComisionModelo')?.value) || 0;
+        const suma = plataforma + agencia + modelo;
+        const span = document.getElementById('sumaComisionesPreview');
+        if(span) {
+            span.innerHTML = `${suma}%`;
+            span.className = suma === 100 ? 'text-green-400 text-sm font-bold' : 'text-red-400 text-sm font-bold';
         }
+    }
 
-        function copiarLink(id) {
-            const link = window.location.origin + "/dashboard/" + id;
-            navigator.clipboard.writeText(link).then(() => {
-                alert("✅ Link copiado al portapapeles:\n" + link);
-            }).catch(() => {
-                prompt("Copia este enlace:", link);
+    async function guardarConfigGlobal() {
+        const data = {
+            valor_credito_usd: document.getElementById('configValorCredito').value,
+            comision_plataforma_base: document.getElementById('configComisionPlataforma').value,
+            comision_agencia_base: document.getElementById('configComisionAgencia').value,
+            comision_modelo_base: document.getElementById('configComisionModelo').value
+        };
+        try {
+            const res = await fetch('/api/superadmin/config/actualizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            if(res.ok) { showToast('✅ Configuración guardada', 'success'); loadData(); }
+            else showToast('❌ Error al guardar', 'error');
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+
+    function renderActivities(activities) {
+        const container = document.getElementById('activityList');
+        if(!container) return;
+        if(!activities || activities.length === 0) { container.innerHTML = '<p class="text-gray-500 text-center py-4">No hay actividad reciente</p>'; return; }
+        container.innerHTML = activities.slice(0,5).map(a => `<div class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg"><div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">${a.ico || '📋'}</div><div><p class="text-sm text-gray-300">${a.text}</p><p class="text-xs text-gray-500">${a.time}</p></div></div>`).join('');
+    }
+
+    function renderTopAgencies() {
+        const container = document.getElementById('topAgenciesList');
+        if(!container) return;
+        const top = [...agencies].sort((a,b) => (b.monto_plataforma||0) - (a.monto_plataforma||0)).slice(0,5);
+        if(top.length === 0) { container.innerHTML = '<p class="text-gray-500 text-center py-4">Sin datos</p>'; return; }
+        const maxEarn = top[0]?.monto_plataforma || 1;
+        container.innerHTML = top.map((a,i) => `<div><div class="flex justify-between text-sm mb-1"><span>${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} ${a.name}</span><span class="text-green-400">$${((a.monto_plataforma||0)).toLocaleString()}</span></div><div class="bg-gray-800 rounded-full h-1.5"><div class="h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" style="width: ${((a.monto_plataforma||0)/maxEarn)*100}%"></div></div></div>`).join('');
+    }
+
+    function initDistributionChart() {
+        const ctx = document.getElementById('distributionChart')?.getContext('2d');
+        if(ctx) {
+            distributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: ['Plataforma (Amura)', 'Agencias', 'Modelos'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#a855f7', '#ec4899', '#10b981'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af' } } } }
             });
         }
-    </script>
+    }
+
+    // ========== LOGS ==========
+    async function cargarLogs(page = 1) {
+        currentLogsPage = page;
+        const fechaDesde = document.getElementById('logFechaDesde')?.value || '';
+        const fechaHasta = document.getElementById('logFechaHasta')?.value || '';
+        const adminId = document.getElementById('logAdminId')?.value || 'todos';
+        const accion = document.getElementById('logAccion')?.value || 'todas';
+        try {
+            let url = `/api/superadmin/logs?page=${page}&per_page=50`;
+            if(fechaDesde) url += `&fecha_desde=${fechaDesde}`;
+            if(fechaHasta) url += `&fecha_hasta=${fechaHasta}`;
+            if(adminId !== 'todos') url += `&admin_id=${adminId}`;
+            if(accion !== 'todas') url += `&accion=${accion}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const tbody = document.getElementById('logsBody');
+            if(tbody) {
+                if(data.logs.length === 0) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-8">No hay registros</td></tr>';
+                else tbody.innerHTML = data.logs.map(log => `<tr><td class="text-xs">${log.fecha}</td><td>${escapeHtml(log.admin_nombre || '-')}</td><td class="text-gray-400">${escapeHtml(log.admin_email || '-')}</td><td><span class="badge badge-active">${log.accion}</span></td><td><div class="detalles-json" title="${escapeHtml(JSON.stringify(log.detalles))}">${log.detalles ? escapeHtml(JSON.stringify(log.detalles).substring(0, 80)) + (JSON.stringify(log.detalles).length > 80 ? '...' : '') : '-'}</div></td><td class="text-xs">${log.ip || '-'}</td></tr>`).join('');
+            }
+            renderPagination(data, 'logsPagination', 'cargarLogs');
+        } catch(e) { console.error(e); showToast('Error al cargar logs', 'error'); }
+    }
+
+    function renderPagination(data, containerId, callbackFn) {
+        const container = document.getElementById(containerId);
+        if(!container) return;
+        if(data.pages <= 1) { container.innerHTML = ''; return; }
+        let html = '';
+        for(let i = 1; i <= Math.min(data.pages, 10); i++) html += `<button class="page-btn ${i === data.page ? 'active' : ''}" onclick="${callbackFn}(${i})">${i}</button>`;
+        container.innerHTML = html;
+    }
+
+    function limpiarFiltrosLogs() {
+        document.getElementById('logFechaDesde').value = '';
+        document.getElementById('logFechaHasta').value = '';
+        document.getElementById('logAdminId').value = 'todos';
+        document.getElementById('logAccion').value = 'todas';
+        cargarLogs(1);
+    }
+
+    async function exportLogs() {
+        const fechaDesde = document.getElementById('logFechaDesde')?.value || '';
+        const fechaHasta = document.getElementById('logFechaHasta')?.value || '';
+        const adminId = document.getElementById('logAdminId')?.value || 'todos';
+        const accion = document.getElementById('logAccion')?.value || 'todas';
+        let url = `/api/superadmin/logs/export`;
+        const params = [];
+        if(fechaDesde) params.push(`fecha_desde=${fechaDesde}`);
+        if(fechaHasta) params.push(`fecha_hasta=${fechaHasta}`);
+        if(adminId !== 'todos') params.push(`admin_id=${adminId}`);
+        if(accion !== 'todas') params.push(`accion=${accion}`);
+        if(params.length) url += '?' + params.join('&');
+        window.open(url, '_blank');
+    }
+
+    // ========== CRUD ==========
+    async function createAgency() {
+        const data = {
+            nombre: document.getElementById('agencyName').value,
+            correo: document.getElementById('agencyEmail').value,
+            pais: document.getElementById('agencyCountry').value,
+            comision_plataforma: parseInt(document.getElementById('agencyComisionPlataforma').value),
+            comision_agencia: parseInt(document.getElementById('agencyComisionAgencia').value),
+            comision_modelo: parseInt(document.getElementById('agencyComisionModelo').value),
+            password: document.getElementById('agencyPassword').value
+        };
+        if(!data.nombre || !data.correo) { showToast('Nombre y email requeridos', 'error'); return; }
+        if(data.comision_plataforma + data.comision_agencia + data.comision_modelo !== 100) { showToast('Las comisiones deben sumar 100%', 'error'); return; }
+        try {
+            const res = await fetch('/api/crear_agencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            const result = await res.json();
+            if(result.success) { showToast(`✅ Agencia creada: ${result.public_id}`, 'success'); closeModal('agencyModal'); loadData(); }
+            else showToast('❌ Error: ' + (result.msg || 'No se pudo crear'), 'error');
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+
+    async function deleteAgency(public_id) {
+        if(!confirm('¿Eliminar esta agencia? Se eliminarán todas sus modelos.')) return;
+        try {
+            const res = await fetch(`/api/eliminar_agencia/${public_id}`, { method: 'DELETE' });
+            if(res.ok) { showToast('✅ Agencia eliminada', 'success'); loadData(); }
+            else showToast('❌ Error', 'error');
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+
+    async function openEditAgencyModal(public_id) {
+        const agency = agencies.find(a => a.public_id === public_id);
+        if(agency) {
+            document.getElementById('editAgencyId').value = public_id;
+            document.getElementById('editAgencyName').value = agency.name;
+            document.getElementById('editAgencyEmail').value = agency.email;
+            document.getElementById('editAgencyCountry').value = agency.country || '';
+            document.getElementById('editAgencyComisionPlataforma').value = agency.comision_plataforma || 60;
+            document.getElementById('editAgencyComisionAgencia').value = agency.comision_agencia || 25;
+            document.getElementById('editAgencyComisionModelo').value = agency.comision_modelo || 15;
+            openModal('editAgencyModal');
+        }
+    }
+
+    async function confirmEditAgency() {
+        const public_id = document.getElementById('editAgencyId').value;
+        const data = {
+            name: document.getElementById('editAgencyName').value,
+            email: document.getElementById('editAgencyEmail').value,
+            country: document.getElementById('editAgencyCountry').value,
+            comision_plataforma: parseInt(document.getElementById('editAgencyComisionPlataforma').value),
+            comision_agencia: parseInt(document.getElementById('editAgencyComisionAgencia').value),
+            comision_modelo: parseInt(document.getElementById('editAgencyComisionModelo').value)
+        };
+        try {
+            const res = await fetch(`/api/superadmin/agency/${public_id}/update`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            if(res.ok) { showToast('✅ Agencia actualizada', 'success'); closeModal('editAgencyModal'); loadData(); }
+            else showToast('❌ Error', 'error');
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+
+    async function createModel() {
+        const nombre = document.getElementById('modelName').value;
+        const correo = document.getElementById('modelEmail').value;
+        const agencia_public_id = document.getElementById('modelAgency').value;
+        const pais = document.getElementById('modelCountry').value;
+        const tier = document.getElementById('modelTier').value;
+        const password = document.getElementById('modelPassword').value;
+        if(!nombre || !correo || !agencia_public_id) { showToast('❌ Nombre, email y agencia son requeridos', 'error'); return; }
+        const formData = new FormData();
+        formData.append('nombre', nombre); formData.append('correo', correo); formData.append('password', password);
+        formData.append('agencia_id', agencia_public_id); formData.append('pais', pais); formData.append('tier', tier);
+        if(selectedPhotoBase64) { const blob = await fetch(selectedPhotoBase64).then(r => r.blob()); formData.append('foto', blob, 'foto.jpg'); }
+        try {
+            const res = await fetch('/api/crear_perfil', { method: 'POST', body: formData });
+            const result = await res.json();
+            if(result.success) {
+                showToast(`✅ Modelo creada: ${result.public_id}`, 'success'); closeModal('modelModal');
+                selectedPhotoBase64 = null; document.getElementById('photoPreview').innerHTML = '<i class="fas fa-camera text-white text-xl"></i>';
+                document.getElementById('modelName').value = ''; document.getElementById('modelEmail').value = '';
+                document.getElementById('modelPassword').value = 'Model2024!'; document.getElementById('modelAgency').value = '';
+                loadData();
+            } else showToast('❌ Error: ' + (result.msg || 'No se pudo crear'), 'error');
+        } catch(e) { console.error(e); showToast('Error de conexión', 'error'); }
+    }
+
+    async function deleteModel(public_id) {
+        if(!confirm('¿Eliminar esta modelo?')) return;
+        try {
+            const res = await fetch(`/api/eliminar_perfil/${public_id}`, { method: 'DELETE' });
+            if(res.ok) { showToast('✅ Modelo eliminada', 'success'); loadData(); }
+            else showToast('❌ Error', 'error');
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+
+    async function createAdmin() {
+        const data = { nombre: document.getElementById('adminName').value, email: document.getElementById('adminEmail').value, password: document.getElementById('adminPass').value };
+        if(!data.nombre || !data.email || !data.password) { showToast('Todos los campos son requeridos', 'error'); return; }
+        try {
+            const res = await fetch('/api/superadmin/admin/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            if(res.ok) { showToast('✅ Administrador creado', 'success'); closeModal('adminModal'); document.getElementById('adminName').value = ''; document.getElementById('adminEmail').value = ''; document.getElementById('adminPass').value = ''; loadAdmins(); }
+            else { const err = await res.json(); showToast('❌ Error: ' + (err.msg || 'No se pudo crear'), 'error'); }
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+
+    function openResetPassModal(id) { document.getElementById('resetAdminId').value = id; document.getElementById('newAdminPass').value = ''; openModal('resetPassModal'); }
+    async function confirmResetPass() {
+        const id = document.getElementById('resetAdminId').value;
+        const password = document.getElementById('newAdminPass').value;
+        if(!password) { showToast('Ingrese una nueva contraseña', 'error'); return; }
+        try {
+            const res = await fetch(`/api/superadmin/admin/${id}/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: password }) });
+            if(res.ok) { showToast('✅ Contraseña actualizada', 'success'); closeModal('resetPassModal'); loadAdmins(); }
+            else showToast('❌ Error', 'error');
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+
+    async function deleteAdmin(id) {
+        if(!confirm('¿Eliminar este administrador?')) return;
+        try {
+            const res = await fetch(`/api/superadmin/admin/${id}/delete`, { method: 'DELETE' });
+            if(res.ok) { showToast('✅ Administrador eliminado', 'success'); loadAdmins(); }
+            else showToast('❌ Error', 'error');
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+
+    function openEditAdminModal(id, nombre, email) {
+        document.getElementById('editAdminId').value = id;
+        document.getElementById('editAdminNombre').value = nombre;
+        document.getElementById('editAdminEmail').value = email;
+        openModal('editAdminModal');
+    }
+
+    async function confirmEditAdmin() {
+        const id = document.getElementById('editAdminId').value;
+        const nombre = document.getElementById('editAdminNombre').value;
+        const email = document.getElementById('editAdminEmail').value;
+        if(!nombre || !email) { showToast('❌ Nombre y email son requeridos', 'error'); return; }
+        try {
+            const res = await fetch(`/api/superadmin/admin/${id}/update`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: nombre, email: email }) });
+            if(res.ok) { showToast('✅ Administrador actualizado', 'success'); closeModal('editAdminModal'); loadAdmins(); }
+            else showToast('❌ Error', 'error');
+        } catch(e) { showToast('Error de conexión', 'error'); }
+    }
+
+    function previewPhoto(input) {
+        if(input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) { selectedPhotoBase64 = e.target.result; document.getElementById('photoPreview').innerHTML = `<img src="${selectedPhotoBase64}" class="w-full h-full object-cover">`; };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function showToast(msg, type) {
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg text-white text-sm z-50 ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-purple-500'}`;
+        toast.innerHTML = msg;
+        document.getElementById('toastContainer').appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function logout() { window.location.href = '/logout'; }
+
+    function initSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        document.getElementById('toggleSidebar')?.addEventListener('click', () => sidebar.classList.toggle('-translate-x-full'));
+        document.getElementById('mobileMenuBtn')?.addEventListener('click', () => sidebar.classList.toggle('-translate-x-full'));
+        document.querySelectorAll('.nav-item[data-tab]').forEach(item => { item.addEventListener('click', (e) => { e.preventDefault(); switchTab(item.getAttribute('data-tab')); }); });
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        document.querySelector(`.nav-item[data-tab="${tabId}"]`).classList.add('active');
+        const titles = { dashboard: 'Dashboard', agencies: 'Agencias', models: 'Modelos', admins: 'Administradores', config: 'Configuración', regalos: 'Regalos', audit: 'Auditoría' };
+        document.getElementById('pageTitle').textContent = titles[tabId] || 'Dashboard';
+        if(tabId === 'audit') { cargarLogs(1); cargarSelectAdmins(); cargarAccionesLista(); }
+        if(tabId === 'dashboard' && distributionChart) distributionChart.resize();
+    }
+
+    async function cargarSelectAdmins() {
+        const res = await fetch('/api/superadmin/admins');
+        const adminsList = await res.json();
+        const select = document.getElementById('logAdminId');
+        if(select) select.innerHTML = '<option value="todos">Todos</option>' + adminsList.map(a => `<option value="${a.id}">${escapeHtml(a.nombre)} (${escapeHtml(a.email)})</option>`).join('');
+    }
+
+    async function cargarAccionesLista() {
+        try {
+            const res = await fetch('/api/superadmin/acciones-lista');
+            const data = await res.json();
+            const select = document.getElementById('logAccion');
+            if(select && data.acciones) select.innerHTML = '<option value="todas">Todas</option>' + data.acciones.map(a => `<option value="${a}">${a}</option>`).join('');
+        } catch(e) { console.error(e); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { 
+        loadData(); 
+        initSidebar(); 
+        loadAdminInfo(); 
+        initDistributionChart();
+        document.getElementById('configComisionPlataforma')?.addEventListener('input', actualizarSumaComisiones);
+        document.getElementById('configComisionAgencia')?.addEventListener('input', actualizarSumaComisiones);
+        document.getElementById('configComisionModelo')?.addEventListener('input', actualizarSumaComisiones);
+        document.getElementById('agencyComisionPlataforma')?.addEventListener('input', () => {
+            const p = parseInt(document.getElementById('agencyComisionPlataforma')?.value) || 0;
+            const a = parseInt(document.getElementById('agencyComisionAgencia')?.value) || 0;
+            const m = parseInt(document.getElementById('agencyComisionModelo')?.value) || 0;
+            const suma = p + a + m;
+            const preview = document.getElementById('previewSumaAgencia');
+            if(preview) preview.innerHTML = `Suma: ${suma}% ${suma === 100 ? '✓' : '❌ Debe sumar 100%'}`;
+            preview.className = `text-xs mt-2 ${suma === 100 ? 'text-green-400' : 'text-red-400'}`;
+        });
+        document.getElementById('agencyComisionAgencia')?.addEventListener('input', () => {
+            const p = parseInt(document.getElementById('agencyComisionPlataforma')?.value) || 0;
+            const a = parseInt(document.getElementById('agencyComisionAgencia')?.value) || 0;
+            const m = parseInt(document.getElementById('agencyComisionModelo')?.value) || 0;
+            const suma = p + a + m;
+            const preview = document.getElementById('previewSumaAgencia');
+            if(preview) preview.innerHTML = `Suma: ${suma}% ${suma === 100 ? '✓' : '❌ Debe sumar 100%'}`;
+            preview.className = `text-xs mt-2 ${suma === 100 ? 'text-green-400' : 'text-red-400'}`;
+        });
+        document.getElementById('agencyComisionModelo')?.addEventListener('input', () => {
+            const p = parseInt(document.getElementById('agencyComisionPlataforma')?.value) || 0;
+            const a = parseInt(document.getElementById('agencyComisionAgencia')?.value) || 0;
+            const m = parseInt(document.getElementById('agencyComisionModelo')?.value) || 0;
+            const suma = p + a + m;
+            const preview = document.getElementById('previewSumaAgencia');
+            if(preview) preview.innerHTML = `Suma: ${suma}% ${suma === 100 ? '✓' : '❌ Debe sumar 100%'}`;
+            preview.className = `text-xs mt-2 ${suma === 100 ? 'text-green-400' : 'text-red-400'}`;
+        });
+    });
+</script>
 </body>
 </html>

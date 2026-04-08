@@ -153,7 +153,7 @@
 
         <div class="profiles-grid" id="profilesGrid">
             {% for p in perfiles %}
-            <div class="profile-card-catalog" data-online="{{ p.is_online|lower }}" data-id="{{ p.id }}">
+            <div class="profile-card-catalog" data-online="{{ p.is_online|lower }}" data-id="{{ p.public_id }}">
                 <div class="card-image">
                     <img src="/static/uploads/{{ p.foto_principal }}" alt="{{ p.nombre }}" onerror="this.src='/static/default_user.png'">
                     {% if p.is_online %}
@@ -167,7 +167,7 @@
                     </div>
                     <div class="card-location"><i class="fas fa-map-marker-alt"></i> {{ p.ubicacion }}</div>
                     <div class="card-status">"{{ p.estado_hoy[:60] }}{% if p.estado_hoy|length > 60 %}...{% endif %}"</div>
-                    <button class="btn-chat" onclick="event.stopPropagation(); intentarChat('{{ p.id }}')"><i class="fas fa-comment-dots"></i> Chatear ahora</button>
+                    <button class="btn-chat" onclick="event.stopPropagation(); intentarChat('{{ p.public_id }}')"><i class="fas fa-comment-dots"></i> Chatear ahora</button>
                 </div>
             </div>
             {% else %}
@@ -180,7 +180,7 @@
 
     <script>
         function showToast(message) { const toast = document.getElementById('dynamicToastGlobal'); toast.textContent = message; toast.style.opacity = '1'; setTimeout(() => { toast.style.opacity = '0'; }, 3000); }
-        async function intentarChat(perfilId) { const btn = event.target.closest('.btn-chat'); const originalHTML = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...'; btn.disabled = true; try { const res = await fetch('/api/cobrar_chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ perfil_id: perfilId }) }); const data = await res.json(); if (data.success) { window.location.href = `/chat_cliente/${perfilId}`; } else { alert("❌ Saldo insuficiente. Recarga créditos en tu perfil."); window.location.href = "/perfil_cliente"; } } catch (error) { btn.innerHTML = originalHTML; btn.disabled = false; alert("Error de conexión"); } }
+        async function intentarChat(perfilPublicId) { const btn = event.target.closest('.btn-chat'); const originalHTML = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...'; btn.disabled = true; try { const res = await fetch('/api/cobrar_chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ perfil_public_id: perfilPublicId }) }); const data = await res.json(); if (data.success) { window.location.href = `/chat_cliente/${perfilPublicId}`; } else { alert("❌ Saldo insuficiente. Recarga créditos en tu perfil."); window.location.href = "/perfil_cliente"; } } catch (error) { btn.innerHTML = originalHTML; btn.disabled = false; alert("Error de conexión"); } }
         document.querySelectorAll('.filter-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); const filter = this.dataset.filter; const cards = document.querySelectorAll('.profile-card-catalog'); cards.forEach(card => { if (filter === 'all') { card.style.display = ''; } else if (filter === 'online') { card.style.display = card.dataset.online === 'true' ? '' : 'none'; } else if (filter === 'new') { card.style.display = ''; } }); }); });
     </script>
 </body>
